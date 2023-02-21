@@ -16,7 +16,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -35,9 +34,8 @@ import java.io.IOException;
 public class MessageServer {
     private static final Logger log = LoggerFactory.getLogger(MessageServer.class);
     public static void main(String[] args) {
-        ConfigurableApplicationContext ctx = SpringApplication.run(MessageServer.class, args);
         Trace.init();
-        Startup.log(ctx.getEnvironment());
+        Startup.log(SpringApplication.run(MessageServer.class, args).getEnvironment());
     }
 
     @Bean

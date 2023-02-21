@@ -9,10 +9,11 @@ single service, when they share the same `BandwidthsStore`.
 
 There are multiple services:
 
-- `message-server` - _multiple instances_
+- `message-server` - A server for messages _multiple instances_
 - `message-client` - client for message-server
 - `redis-cache` - shared cache for message-server instances
 - `nginx` - load balancer for message-server instances
+- `user-serivce` - A JAX RS web application. 
 
 ### How
 
