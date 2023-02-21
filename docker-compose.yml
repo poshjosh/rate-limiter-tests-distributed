@@ -1,0 +1,70 @@
+version: '3'
+services:
+  message-server:
+    build:
+      context: message-server
+      dockerfile: Dockerfile
+    image: message-server:latest
+    expose:
+      - "5555"
+    networks:
+      - message-network
+    restart: unless-stopped
+    depends_on:
+      - redis-cache
+    environment:
+      SERVER_PORT: 5555
+      SPRING_REDIS_HOST: redis-cache
+      SPRING_REDIS_PORT: 6379
+      SPRING_REDIS_PASSWORD: eg2iVX7EcKwpTKPCDmd2t81ge8oL
+      SPRING_REDIS_DATABASE: 0
+      SPRING_REDIS_TIMEOUT: 60000
+      SPRING_CACHE_TYPE: redis
+      SPRING_CACHE_REDIS_CACHE_NULL_VALUES: false
+
+  message-client:
+    build:
+      context: message-client
+      dockerfile: Dockerfile
+    image: message-client:latest
+    ports:
+      - "3333:3333"
+    networks:
+      - message-network
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 3333
+      APP_MESSAGE_SERVER_URL: http://nginx:4444
+
+  redis-cache:
+    image: redis:7.0-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - message-network
+    restart: unless-stopped
+    # --save 20 1 instructs the redis server to save the dataset to disk every 20 seconds,
+    # if there are one or more writes
+    command: redis-server --save 20 1 --loglevel debug
+    volumes:
+      - redis-cache:/data
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "4444:4444"
+    networks:
+      - message-network
+    restart: unless-stopped
+    depends_on:
+      - message-server
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+
+networks:
+  message-network:
+    driver: bridge
+
+volumes:
+  redis-cache:
+    driver: local

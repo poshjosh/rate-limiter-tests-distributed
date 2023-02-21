@@ -1,0 +1,17 @@
+io/github/poshjosh/ratelimiter/tests/server/MessageService$UpdateNotSupportedException.class
+io/github/poshjosh/ratelimiter/tests/server/MessageServer$RateLimitPropertiesImpl.class
+io/github/poshjosh/ratelimiter/tests/server/Message.class
+io/github/poshjosh/ratelimiter/tests/server/MessageService$InvalidRequestException.class
+io/github/poshjosh/ratelimiter/tests/server/InitialMessagesPersister.class
+io/github/poshjosh/ratelimiter/tests/server/MessageServer.class
+io/github/poshjosh/ratelimiter/tests/server/MessageServer$RateLimitingFilter.class
+io/github/poshjosh/ratelimiter/tests/server/MessageController.class
+io/github/poshjosh/ratelimiter/tests/server/MessageServerExceptionHandler.class
+io/github/poshjosh/ratelimiter/tests/server/Trace.class
+io/github/poshjosh/ratelimiter/tests/server/MessageService$MessageException.class
+io/github/poshjosh/ratelimiter/tests/server/PropertiesLogger.class
+io/github/poshjosh/ratelimiter/tests/server/CacheController.class
+io/github/poshjosh/ratelimiter/tests/server/MessageServer$RateLimiterConfigurer.class
+io/github/poshjosh/ratelimiter/tests/server/Startup.class
+io/github/poshjosh/ratelimiter/tests/server/MessageService.class
+io/github/poshjosh/ratelimiter/tests/server/MessageServer$RedisConfiguration.class

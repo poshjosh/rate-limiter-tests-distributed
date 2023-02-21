@@ -1,0 +1,5 @@
+io/github/poshjosh/ratelimiter/tests/client/RateLimitTests.class
+io/github/poshjosh/ratelimiter/tests/client/Message.class
+io/github/poshjosh/ratelimiter/tests/client/MessageController.class
+io/github/poshjosh/ratelimiter/tests/client/MessageClient.class
+io/github/poshjosh/ratelimiter/tests/client/Startup.class
