@@ -25,7 +25,7 @@
         <dependency>
             <groupId>io.github.poshjosh</groupId>
             <artifactId>rate-limiter-javaee</artifactId>
-            <version>0.4.2B-SNAPSHOT</version>
+            <version>0.4.2</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
