@@ -1,5 +1,6 @@
 package io.github.poshjosh.ratelimiter.tests.server;
 
+import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -24,13 +25,15 @@ public class CacheController {
     }
 
     @GetMapping("/last-gotten")
+    @Rate(100)
     public String getLastGotten() {
-        return getStringValueFromCache(MessageServer.RateLimiterConfigurer.getLastGottenKey());
+        return getStringValueFromCache(MessageServer.RedisBandwidthStore.getLastGottenKey());
     }
 
     @GetMapping("/last-put")
+    @Rate(100)
     public String getLastPut() {
-        return getStringValueFromCache(MessageServer.RateLimiterConfigurer.getLastPutKey());
+        return getStringValueFromCache(MessageServer.RedisBandwidthStore.getLastPutKey());
     }
 
     private String getStringValueFromCache(String key) {

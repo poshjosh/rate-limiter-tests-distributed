@@ -3,7 +3,13 @@ spring:
     name: message-client
 
 server:
-  port: 3000
+  port: 3333
+
+app:
+  message-server:
+    url: http://localhost:5555
+  rate-limit-mode: auto
+  output-dir: /.rate-limiter/logs/tests
 
 debug: false
 
@@ -11,8 +17,3 @@ logging:
   level:
     ROOT: INFO
     web: INFO
-
-app:
-  message-server:
-    url: http://message-server:5000
-

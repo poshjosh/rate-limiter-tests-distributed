@@ -14,7 +14,7 @@ public class ResourceLimiterConfigurerImpl implements ResourceLimiterConfigurer 
         //
         //registries.matchers().register(RateLimitPropertiesImpl.DEFAULT_CONFIG_NAME,
         //        containerRequestContext -> containerRequestContext.getUriInfo().getRequestUri().toString());
-        registries.registerListener(new UsageListener() {
+        registries.listeners().register(new UsageListener() {
             @Override
             public void onConsumed(Object request, String resource, int permits, LimiterConfig<?> config) {
                 System.out.println("ResourceLimitingConfigurerImpl " + resource + ", limit: " + config);

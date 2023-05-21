@@ -2,63 +2,29 @@ package io.github.poshjosh.ratelimiter.tests.client;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.HttpStatusCodeException;
-import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-public class RateLimitTests {
+public class Tests extends AbstractTests {
+    private static final Logger log = LoggerFactory.getLogger(Tests.class);
 
-    private static final Logger log = LoggerFactory.getLogger(RateLimitTests.class);
-    
     private static final int OK = 200;
     private static final int CREATED = 201;
     private static final int TOO_MANY = 429;
 
-    private static int postedMessageCount = 0;
-    private static int failureCount = 0;
-    private static final AtomicBoolean inProgress = new AtomicBoolean();
     private final URI uri;
-    private final RestTemplate restTemplate = new RestTemplate();
 
-    private final StringBuilder output = new StringBuilder();
-
-    public RateLimitTests(URI uri) {
+    public Tests(URI uri) {
         this.uri = Objects.requireNonNull(uri);
     }
 
-    public boolean isInProgress() {
-        return inProgress.get();
-    }
-
-    /**
-     * Run rate limit tests against a remote service
-     * @return The number of tests that failed
-     * @throws IllegalStateException if an instance of this test is already running
-     */
-    public String run() {
-        if (inProgress.get()) {
-            throw new IllegalStateException("In progress");
-        }
-        try {
-            inProgress.compareAndSet(false, true);
-            return doRun();
-        } finally {
-            inProgress.compareAndSet(true, false);
-        }
-    }
-
-    private String doRun() {
-
-        failureCount = 0;
+    protected String doRun() {
 
         final List<String> noCookies = Collections.emptyList();
 
@@ -105,7 +71,7 @@ public class RateLimitTests {
         shouldReturnStatus(givenAllEntitiesAreGotten(noCookies), OK); // No header, no limit
         shouldReturnStatus(givenAllEntitiesAreGotten(noCookies, headers), TOO_MANY); // 2 of 1
 
-        return "Failure count: " + failureCount + output;
+        return "";
     }
 
     private ResponseEntity<List> givenAllEntitiesAreGotten(List<String> cookies) {
@@ -138,56 +104,14 @@ public class RateLimitTests {
         return sendRequest(uri, method, cookies, new HttpHeaders(), body, Object.class, "");
     }
 
-    private <T> ResponseEntity<T> sendRequest(
-            URI uri, HttpMethod method, List<String> cookies,
-            HttpHeaders headers, Message body, Class<T> responseType, T bodyIfNone) {
-        if (cookies != null && !cookies.isEmpty()) {
-            headers.put("Cookie", cookies);
-        }
-        HttpEntity<Message> entity = new HttpEntity<>(body, headers);
-        log.info("{} {}, with cookies: {}", method, uri, cookies);
-        ResponseEntity<T> response;
-        try {
-            response = restTemplate.exchange(uri, method, entity, responseType);
-        } catch(HttpStatusCodeException e) {
-            log.warn(e.toString());
-            response = ResponseEntity.status(e.getStatusCode())
-                    .headers(e.getResponseHeaders())
-                    .body(bodyIfNone);
-        }
-        log(response);
-        return response;
-    }
-
-    private <T> boolean shouldReturnStatus(ResponseEntity<T> responseEntity, int expectedStatus) {
+    protected <T> boolean shouldReturnStatus(ResponseEntity<T> responseEntity, int expectedStatus) {
         final int status = responseEntity.getStatusCodeValue();
-        final boolean result;
-        if (expectedStatus != status) {
-            ++failureCount;
-            result = false;
-        } else {
-            result = true;
-        }
+        final boolean result = super.shouldReturnStatus(responseEntity, expectedStatus);
         final String resultStr = result ? "SUCCESS" : "FAILURE";
-        log.info(resultStr);
+        log.debug(resultStr);
         final T body = responseEntity.getBody();
-        output.append("<br/><br/>").append(resultStr).append(" ").append(status)
-                .append(" Trace:<br/>").append(body);
+        appendOutput("<br/><br/>").appendOutput(resultStr).appendOutput(" ").appendOutput(status)
+                .appendOutput(" Trace:<br/>").appendOutput(body);
         return result;
-    }
-
-    private Message getRandomRequestBody() {
-        ++postedMessageCount;
-        Message message = new Message();
-        message.setText("random-message" + (postedMessageCount));
-        return message;
-    }
-
-    private void log(ResponseEntity responseEntity) {
-        log.info("Response status: {}", responseEntity.getStatusCode());
-    }
-
-    private List<String> getCookies(ResponseEntity responseEntity) {
-        return responseEntity.getHeaders().get("Set-Cookie");
     }
 }

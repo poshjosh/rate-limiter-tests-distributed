@@ -4,6 +4,7 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.AppenderBase;
+import io.github.poshjosh.ratelimiter.Ticker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,8 +13,6 @@ import java.util.List;
 import java.util.Objects;
 
 public final class Trace extends AppenderBase<ILoggingEvent> {
-
-    private static final Logger logger = LoggerFactory.getLogger(Trace.class);
 
     private static final ThreadLocal<List<Message>> trace = new ThreadLocal<>();
 
@@ -68,12 +67,10 @@ public final class Trace extends AppenderBase<ILoggingEvent> {
         Appender<ILoggingEvent> appender = new Trace();
         LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
         ch.qos.logback.classic.Logger rootLogger = context.getLogger(Logger.ROOT_LOGGER_NAME);
-        String appenderName = "TraceAppender";
-        appender.setName(appenderName);
+        appender.setName(Trace.class.getName());
         appender.setContext(context);
         appender.start();
         rootLogger.addAppender(appender);
-        logger.info("Added log custom appender: {}", appenderName);
     }
 
     @Override
@@ -84,10 +81,13 @@ public final class Trace extends AppenderBase<ILoggingEvent> {
         }
         int index = loggerName.lastIndexOf('.');
         String name = index == -1 ? loggerName : loggerName.substring(index + 1);
-        Trace.add(name + "|" + iLoggingEvent.getFormattedMessage());
+        Trace.add(name + iLoggingEvent.getFormattedMessage());
     }
 
     public static boolean accept(String message) {
+        if (prefixToAccept.isEmpty()) {
+            return true;
+        }
         return message.startsWith(prefixToAccept);
     }
 }

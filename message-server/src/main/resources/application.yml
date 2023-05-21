@@ -2,15 +2,21 @@ rate-limiter:
   resource-packages: io.github.poshjosh.ratelimiter.tests.server
 
 spring:
-  session:
-    store-type: redis
   application:
     name: message-server
   cache:
     cache-names: messages-cache
+    type: redis
+    redis:
+      cache-null-values: false
+  session:
+    store-type: redis
 
 server:
-  port: 5000
+  port: 5555
+
+app:
+  rate-limit-mode: auto
 
 debug: false
 
@@ -18,6 +24,8 @@ logging:
   level:
     ROOT: INFO
     web: INFO
-    org.springframework.cache: TRACE
-    org.springframework.data.redis: TRACE
+    org.springframework.cache: INFO
+    org.springframework.data.redis: INFO
+    org.springframework.data.redis.core: INFO
+    org.springframework.data.redis.connection: INFO
 

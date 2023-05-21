@@ -33,7 +33,7 @@ public class MessageServerExceptionHandler extends ResponseEntityExceptionHandle
 
     private ResponseEntity<Object> handleException(Exception ex, WebRequest req, HttpStatus status) {
         if (log.isWarnEnabled()) {
-            log.warn(ex.getLocalizedMessage());
+            log.warn(ex.toString());
         }
         return handleExceptionInternal(ex, Trace.getAndClear(), new HttpHeaders(), status, req);
     }

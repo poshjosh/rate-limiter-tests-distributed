@@ -2,8 +2,6 @@ package io.github.poshjosh.ratelimiter.tests.server;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.cache.annotation.CacheConfig;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PathVariable;
 
@@ -11,7 +9,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
-@CacheConfig(cacheNames = {MessageService.CACHE_NAME})
 public class MessageService {
 
     public static class UpdateNotSupportedException extends MessageException{
@@ -35,11 +32,10 @@ public class MessageService {
 
     private final Logger log = LoggerFactory.getLogger(MessageService.class);
 
-    public static final String CACHE_NAME = "messages-cache";
-
     private static final Map<Long, Message> messages = new ConcurrentHashMap<>();
 
     public Message addMessage(Message message) {
+        log.debug("#addMessage({})", message);
         if (message == null) {
             throw new InvalidRequestException("message");
         }
@@ -54,28 +50,31 @@ public class MessageService {
     }
 
     public int countMessages() {
+        log.debug("#countMessages()");
         synchronized (messages) {
             return messages.size();
         }
     }
 
-    @Cacheable(key = "#id")
     public Optional<Message> getMessage(@PathVariable("id") Long id) {
+        log.debug("#getMessage({})", id);
         if (id == null) {
             throw new InvalidRequestException("id");
         }
-        log.info("#getMessage({})", id);
-        return Optional.of(messages.get(id));
+        synchronized (messages) {
+            return Optional.of(messages.get(id));
+        }
     }
 
     public List<Message> getMessages() {
-        log.info("#getMessages()");
+        log.debug("#getMessages()");
         synchronized (messages) {
             return Collections.unmodifiableList(new ArrayList<>(messages.values()));
         }
     }
 
     public boolean removeMessage(Long id) {
+        log.debug("#removeMessage({})", id);
         if (id == null) {
             throw new InvalidRequestException("id");
         }
@@ -85,6 +84,7 @@ public class MessageService {
     }
 
     public boolean updateMessage(Message message) {
+        log.debug("#updateMessage({})", message);
         throw new UpdateNotSupportedException();
     }
 }
