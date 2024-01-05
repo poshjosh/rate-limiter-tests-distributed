@@ -2,8 +2,8 @@ package io.github.poshjosh.ratelimiter.tests.client.performance;
 
 import io.github.poshjosh.ratelimiter.tests.client.AbstractTests;
 import io.github.poshjosh.ratelimiter.tests.client.ResourcePaths;
-import io.github.poshjosh.ratelimiter.tests.client.performance.process.PerformanceTestStrategy;
-import io.github.poshjosh.ratelimiter.tests.client.performance.process.TestProcess;
+import io.github.poshjosh.ratelimiter.tests.client.performance.strategy.PerformanceTestStrategy;
+import io.github.poshjosh.ratelimiter.tests.client.performance.strategy.TestProcess;
 import io.github.poshjosh.ratelimiter.tests.client.util.MathUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,21 +12,16 @@ import org.springframework.http.ResponseEntity;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class PerformanceTests extends AbstractTests implements TestProcess {
 
     private static final Logger log = LoggerFactory.getLogger(PerformanceTests.class);
 
-
-    private final Object mutex = new Object();
-
     private final BigDecimal ONE_THOUSAND = BigDecimal.valueOf(1000);
     private long startTime;
-    private final BigDecimal [] lastResultHolder = new BigDecimal[1];
-
-    private final AtomicInteger numberOfThreads = new AtomicInteger();
 
     private final URI baseUri;
 
@@ -36,6 +31,10 @@ public class PerformanceTests extends AbstractTests implements TestProcess {
 
     private final PerformanceTestData performanceTestData;
 
+    private final ExecutorService executorService;
+
+    private int totalDurationSeconds;
+
     public PerformanceTests(
             URI baseUri, PerformanceTestData performanceTestData,
             PerformanceTestsResultHandler resultHandler) {
@@ -44,6 +43,7 @@ public class PerformanceTests extends AbstractTests implements TestProcess {
         this.uri = ResourcePaths.performanceTestUri(baseUri, performanceTestData.getLimit(),
                 performanceTestData.getTimeout(), performanceTestData.getWork());
         this.resultHandler = resultHandler;
+        this.executorService = Executors.newCachedThreadPool();
     }
 
     protected String doRun() {
@@ -51,32 +51,50 @@ public class PerformanceTests extends AbstractTests implements TestProcess {
         final Map statsBefore = fetchStats();
 
         startTime = System.currentTimeMillis();
-        lastResultHolder[0] = null;
-        numberOfThreads.set(0);
+
+        totalDurationSeconds = 0;
 
         final int estResultSizePerIteration = 25_000;
         final int iterations = performanceTestData.getIterations();
 
-        List<Thread> threads = new ArrayList<>(iterations * estResultSizePerIteration);
-
         List<Usage> resultBuffer = new ArrayList<>(iterations * estResultSizePerIteration);
 
         for (int i = 0; i < iterations; i++) {
-            startTests(String.valueOf(i + 1), threads, resultBuffer);
+            startTests(String.valueOf(i + 1), resultBuffer);
         }
 
-        waitForAll(threads);
-
-        log.debug("Threads: {}, results: {}", numberOfThreads, resultBuffer.size());
+        try {
+            executorService.shutdown();
+            executorService.awaitTermination(totalDurationSeconds, TimeUnit.SECONDS);
+        }catch(InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } finally{
+            log.info("Waited {} seconds for {} results", totalDurationSeconds, resultBuffer.size());
+            executorService.shutdownNow();
+        }
 
         List<?> usageRateResponse = sendGetRequest(
                 baseUri.resolve(ResourcePaths.USAGE_PATH), List.class, Collections.emptyList()).getBody();
         List<Usage> usageRate = usageRateResponse.stream()
                 .map(oval -> (Map)oval)
-                .map(map -> new Usage(map.get("amount").toString(), map.get("memory").toString()))
+                .map(map -> new Usage(toBigDecimal(map, "amount"), toBigDecimal(map, "memory")))
                 .collect(Collectors.toList());
 
         return resultHandler.process(statsBefore, resultBuffer, fetchStats(), usageRate);
+    }
+
+    private BigDecimal toBigDecimal(Map data, String key) {
+        final Object oval = data.get(key);
+        switch(key) {
+            case "amount":
+                return MathUtil.toBigDecimal(oval);
+            case "memory":
+                Long lval = oval instanceof Long ? (Long)oval : Long.parseLong(oval.toString());
+                return MathUtil.toBigDecimal(String.valueOf(lval / (double)1_000_000));
+            default:
+                throw new IllegalArgumentException("Expected `amount`  or `memory`, found: `" + key + "`");
+        }
     }
 
     private Map fetchStats() {
@@ -84,86 +102,68 @@ public class PerformanceTests extends AbstractTests implements TestProcess {
                 baseUri.resolve(ResourcePaths.USAGE_SUMMARY_PATH), Map.class, Collections.emptyMap()).getBody();
     }
 
-    private void startTests(String id, List<Thread> threads, List<Usage> resultBuffer) {
+    private void startTests(String id, List<Usage> resultBuffer) {
         final RequestSpreadType requestSpreadType = performanceTestData.getRequestSpreadType();
         final double percent = (double)performanceTestData.getPercent() / 100;
         if (percent < 0) {
             throw new IllegalArgumentException("Performance test percent < 0: " + percent);
         }
-        getTestStrategy(requestSpreadType).run(id, threads, resultBuffer, percent);
-    }
-
-    private PerformanceTestStrategy getTestStrategy(RequestSpreadType requestSpreadType) {
-        switch (requestSpreadType) {
-            case STEEP_GAUSSIAN: return PerformanceTestStrategy.ofSteepGaussian(this);
-            case RANDOM_1: return PerformanceTestStrategy.ofRandom1(this);
-            case STEADY_1: return PerformanceTestStrategy.ofSteady1(this);
-            case GAUSSIAN:
-            default: return PerformanceTestStrategy.ofGaussian(this);
-        }
+        PerformanceTestStrategy.of(requestSpreadType, this).run(id, resultBuffer, percent);
     }
 
     @Override
-    public void run(String id, double requestPerSec, List<Thread> threads, List<Usage> resultBuffer) {
+    public List<CompletableFuture<Usage>> run(String id, double requestPerSec, List<Usage> resultBuffer) {
 
-        final BigDecimal responseBodyIfNone = MathUtil.ZERO;
-
-        final int intervalMillis = (int)(1000 / requestPerSec);
-        final int count = (int)(requestPerSec * performanceTestData.getDurationPerTestUser());
+        final int durationSeconds = performanceTestData.getDurationPerTestUser();
 
         Set<String> cookies = new HashSet<>();
 
-        for (int i = 0; i < count; i ++) {
+        final int totalRequests = (int)(durationSeconds * requestPerSec);
+        final int interval = (int)((1 / requestPerSec) * 1000);
 
-            sleep(intervalMillis);
+        List<CompletableFuture<Usage>> futures = new ArrayList<>(totalRequests);
 
-            final String threadName = id + "_" + i;
+        for (int i = 0; i < totalRequests; i ++) {
 
-            Runnable runnable = () -> {
-                BigDecimal result = MathUtil.ZERO;
-                try {
-                    ResponseEntity<Object> responseEntity = sendGetUsageRequest(responseBodyIfNone);
-                    cookies.addAll(getCookies(responseEntity));
-                    shouldReturnStatus(responseEntity, 200);
-                    Object body = responseEntity.getBody();
-                    result = MathUtil.toBigDecimal(body);
-                }catch(RuntimeException e) {
-                    //org.springframework.web.client.ResourceAccessException: I/O error on GET request for "http://nginx:4444/usage/limited": Connection reset; nested exception is java.net.SocketException: Connection reset
-                    log.warn("Error in runnable named: {}, error: {}", threadName, e);
-                    //throw e;
-                }
-                synchronized (mutex) {
-                    if (MathUtil.ZERO.equals(result)) {
-                        if (lastResultHolder[0] != null) {
-                            result = lastResultHolder[0];
-                        }
-                    } else {
-                        lastResultHolder[0] = result;
-                    }
-                }
-                BigDecimal timeSecs = MathUtil.divide(BigDecimal.valueOf(System.currentTimeMillis() - startTime), ONE_THOUSAND);
-                resultBuffer.add(new Usage(timeSecs, result));
-            };
+            sleep(interval);
 
-            Thread t = new Thread(runnable, threadName);
-            t.start();
-            numberOfThreads.incrementAndGet();
-            threads.add(t);
+            Supplier<Usage> sendUsageRequest =
+                    createUsageRequestTask(id + "_" + i, cookies, resultBuffer);
+
+            futures.add(CompletableFuture.supplyAsync(sendUsageRequest, executorService));
         }
+
+        totalDurationSeconds += durationSeconds;
+
+        return Collections.unmodifiableList(futures);
     }
 
-    private void waitForAll(List<Thread> threads) {
-        threads.forEach(t -> {
+    private Supplier<Usage> createUsageRequestTask(String threadName, Set<String> cookies, List<Usage> resultBuffer) {
+        return () -> {
+            BigDecimal memory = MathUtil.ZERO;
             try {
-                t.join();
-            } catch (InterruptedException e) {
-                onInterrupted(e);
+                ResponseEntity<Object> responseEntity = sendGetUsageRequest(MathUtil.ZERO);
+                cookies.addAll(getCookies(responseEntity));
+                updateStats(responseEntity, 200);
+                Object body = responseEntity.getBody();
+                memory = MathUtil.toBigDecimal(body);
+            }catch(RuntimeException e) {
+                //org.springframework.web.client.ResourceAccessException: I/O error on GET request for "http://nginx:4444/usage/limited": Connection reset; nested exception is java.net.SocketException: Connection reset
+                log.warn("Error in runnable named: {}, error: {}", threadName, e);
+                //throw e;
             }
-        });
+            Usage usage = new Usage(timeSinceStart(), memory);
+            resultBuffer.add(usage);
+            return usage;
+        };
+    }
+
+    private BigDecimal timeSinceStart() {
+        return MathUtil.divide(BigDecimal.valueOf(System.currentTimeMillis() - startTime), ONE_THOUSAND);
     }
 
     private void sleep(long interval) {
-        if (interval < 5) {
+        if (interval < 10) {
             return;
         }
         try {

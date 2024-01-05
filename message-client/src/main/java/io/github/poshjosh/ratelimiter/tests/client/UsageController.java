@@ -18,7 +18,8 @@ public class UsageController {
         this.usageService = usageService;
     }
 
-    @PostMapping(value = ResourcePaths.PERFORMANCE_TESTS_PATH, produces = "text/html;charset=UTF-8")
+    @RequestMapping(method = {RequestMethod.GET, RequestMethod.POST},
+            value = ResourcePaths.PERFORMANCE_TESTS_PATH, produces = "text/html;charset=UTF-8")
     public String performanceTests(PerformanceTestData performanceTestData) {
         log.debug("#performanceTests({})", performanceTestData);
         return usageService.performanceTests(performanceTestData);

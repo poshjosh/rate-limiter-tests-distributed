@@ -15,5 +15,11 @@ debug: false
 
 logging:
   level:
-    ROOT: INFO
-    web: INFO
+    ROOT: info
+    web: info
+    io.github.poshjosh: info
+    org.springframework: info
+#    org.springframework.cache: info
+#    org.springframework.data.redis: info
+#    org.springframework.data.redis.core: info
+#    org.springframework.data.redis.connection: info

@@ -99,6 +99,10 @@ public abstract class AbstractTests {
     }
 
     protected <T> boolean shouldReturnStatus(ResponseEntity<T> responseEntity, int expectedStatus) {
+        return updateStats(responseEntity, expectedStatus);
+    }
+
+    protected <T> boolean updateStats(ResponseEntity<T> responseEntity, int expectedStatus) {
         final int status = responseEntity.getStatusCodeValue();
         if (expectedStatus != status) {
             failureCount.incrementAndGet();

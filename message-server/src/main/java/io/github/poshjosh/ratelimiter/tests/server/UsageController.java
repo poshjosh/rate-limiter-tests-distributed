@@ -65,6 +65,13 @@ public class UsageController{
         return ResponseEntity.ok(usageService.work(work));
     }
 
+    @GetMapping(limited_path + "/15")
+    @Rate(permits = 15, condition = condition)
+    public ResponseEntity<BigDecimal> limitedUsage15(@RequestParam(required = false, defaultValue = "0") int work) {
+        log.debug("#limitedUsage10({})", work);
+        return ResponseEntity.ok(usageService.work(work));
+    }
+
     @GetMapping(limited_path + "/10")
     @Rate(permits = 10, condition = condition)
     public ResponseEntity<BigDecimal> limitedUsage10(@RequestParam(required = false, defaultValue = "0") int work) {

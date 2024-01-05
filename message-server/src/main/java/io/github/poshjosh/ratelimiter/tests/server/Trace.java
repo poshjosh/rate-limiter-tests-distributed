@@ -4,7 +4,6 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.AppenderBase;
-import io.github.poshjosh.ratelimiter.Ticker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

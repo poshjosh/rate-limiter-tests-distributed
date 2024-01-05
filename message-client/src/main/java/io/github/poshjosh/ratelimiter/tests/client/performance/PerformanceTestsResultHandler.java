@@ -47,13 +47,13 @@ public class PerformanceTestsResultHandler {
         saveToFile(dir.resolve(filename + "-summary.html"),
                 summary.getBytes(StandardCharsets.UTF_8));
 
-        save(usageList, "-A");
+        save(usageList, "-usage-responses");
 
         saveUsagePerSecond(usageList);
 
         saveDeviatedFromMin(usageList);
 
-        save(usageRate, "-B");
+        save(usageRate, "-usage-rate");
 
         // return toString(usageList, "<br/>");
         return summary;
@@ -86,13 +86,18 @@ public class PerformanceTestsResultHandler {
         appendTimeStats(usageList, html);
 
         html.append("<h3>Stats</h3>")
-                .tag("b", "Before tests").table(statsBefore)
-                .append("<br/>").tag("b", "After tests").table(statsAfter);
+                .tag("b", "Before running performance tests").table(statsBefore)
+                .append("<br/>").tag("b", "After running performance tests").table(statsAfter);
 
         return html.toString();
     }
 
     private void appendMemoryStats(List<Usage> usageList, Html html) {
+        if (usageList.isEmpty()) {
+            html.p("Memory difference: none")
+                    .p("Average memory: none");
+            return;
+        }
         BigDecimal min = findMinAndMax(usageList, Usage::getMemory)[0];
         BigDecimal max = findMinAndMax(usageList, Usage::getMemory)[1];
         BigDecimal diff = MathUtil.subtract(max, min);

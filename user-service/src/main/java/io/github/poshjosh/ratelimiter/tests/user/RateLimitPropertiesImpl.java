@@ -1,7 +1,7 @@
 package io.github.poshjosh.ratelimiter.tests.user;
 
-import io.github.poshjosh.ratelimiter.util.Rate;
-import io.github.poshjosh.ratelimiter.util.Rates;
+import io.github.poshjosh.ratelimiter.model.Rate;
+import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
 
 import java.time.Duration;
@@ -53,11 +53,11 @@ public class RateLimitPropertiesImpl implements RateLimitProperties {
     }
 
     private Rates getRateLimitConfigList() {
-        return Rates.of(getRateLimits());
+        return Rates.of(getRateLimit());
     }
 
-    private Rate[] getRateLimits() {
-        return new Rate[]{Rate.of(2, Duration.ofMinutes(1))};
+    private Rate getRateLimit() {
+        return Rate.of(2, Duration.ofMinutes(1));
     }
 
     @Override

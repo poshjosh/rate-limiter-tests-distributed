@@ -72,7 +72,7 @@ public class MessageServer {
             this.manualRateLimiter = Objects.requireNonNull(manualRateLimiter);
             this.rateLimitMode = RateLimitMode.of(rateLimitModeString);
         }
-        @Override protected void initFilterBean() throws ServletException{
+        @Override protected void initFilterBean() throws ServletException {
             if (RateLimitMode.Auto.equals(rateLimitMode)) {
                 super.initFilterBean(); // Initialize rate limiting
             }

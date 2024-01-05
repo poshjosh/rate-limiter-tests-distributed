@@ -47,7 +47,7 @@ public class UsageService {
         return stats;
     }
 
-    private BigDecimal toMegaBytes(long dividend) {
+    private static BigDecimal toMegaBytes(long dividend) {
         return BigDecimal.valueOf(dividend).divide(ONE_MILLION,2, RoundingMode.CEILING);
     }
 }
