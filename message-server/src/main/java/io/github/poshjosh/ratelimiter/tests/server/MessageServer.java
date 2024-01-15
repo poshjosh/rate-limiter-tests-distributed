@@ -1,13 +1,13 @@
 package io.github.poshjosh.ratelimiter.tests.server;
 
-import io.github.poshjosh.ratelimiter.UsageListener;
+import io.github.poshjosh.ratelimiter.RateLimiter;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
+import io.github.poshjosh.ratelimiter.bandwidths.BandwidthState;
 import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
-import io.github.poshjosh.ratelimiter.util.LimiterConfig;
-import io.github.poshjosh.ratelimiter.web.core.ResourceLimiterConfig;
+import io.github.poshjosh.ratelimiter.web.core.RateLimiterContext;
 import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
 import io.github.poshjosh.ratelimiter.web.spring.RateLimitPropertiesSpring;
-import io.github.poshjosh.ratelimiter.web.spring.ResourceLimitingFilter;
+import io.github.poshjosh.ratelimiter.web.spring.RateLimitingFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -57,14 +57,14 @@ public class MessageServer {
     public static class RateLimitPropertiesImpl extends RateLimitPropertiesSpring { }
 
     @Component
-    public static class RateLimitingFilter extends ResourceLimitingFilter implements UsageListener {
+    public static class RateLimitingFilterImpl extends RateLimitingFilter {
         private final AtomicLong requests = new AtomicLong();
         private final AtomicLong consumption = new AtomicLong();
         private final AtomicLong rejection = new AtomicLong();
         private final BandwidthsStore<String> store;
         private final ManualRateLimiter manualRateLimiter;
         private final RateLimitMode rateLimitMode;
-        public RateLimitingFilter(
+        public RateLimitingFilterImpl(
                 RateLimitProperties properties, BandwidthsStore<String> store,
                 ManualRateLimiter manualRateLimiter, @Value("${app.rate-limit-mode}") String rateLimitModeString) {
             super(properties);
@@ -89,9 +89,10 @@ public class MessageServer {
         }
         private void applyManualRateLimit(ServletRequest request, ServletResponse response,
                 FilterChain chain) throws IOException, ServletException {
-            this.onConsumed(request, "", 1, null);
-            if (!manualRateLimiter.tryConsume(request)) {
-                this.onRejected(request, "", 1, null);
+            final boolean success = manualRateLimiter.tryConsume(request);
+            this.onConsumed(request, manualRateLimiter.getBandwidth());
+            if (!success) {
+                this.onRejected(request, manualRateLimiter.getBandwidth());
                 this.onLimitExceeded((HttpServletRequest)request, (HttpServletResponse)response, chain);
                 return;
             }
@@ -99,7 +100,13 @@ public class MessageServer {
         }
         @Override
         protected boolean tryConsume(HttpServletRequest request) {
-            return getResourceLimiter().tryConsume(request, getTimeout(request), TimeUnit.SECONDS);
+            final RateLimiter rateLimiter = getRateLimiterFactory().getRateLimiter(request);
+            final boolean success = rateLimiter.tryAcquire(getTimeout(request), TimeUnit.SECONDS);
+            onConsumed(request, rateLimiter.getBandwidth());
+            if (!success) {
+                onRejected(request, rateLimiter.getBandwidth());
+            }
+            return success;
         }
         private int getTimeout(ServletRequest request) {
             final String timeoutStr = request.getParameter("timeout");
@@ -114,16 +121,16 @@ public class MessageServer {
         }
 
         @Override
-        protected ResourceLimiterConfig.Builder resourceLimiterConfigBuilder() {
-            return super.resourceLimiterConfigBuilder().store(store).usageListener(this);
+        protected RateLimiterContext.Builder rateLimiterContextBuilder() {
+            return super.rateLimiterContextBuilder().store(store);
         }
-        @Override public void onConsumed(Object req, String id, int permits, LimiterConfig<?> cfg) {
+        public void onConsumed(Object req, BandwidthState bandwidth) {
             consumption.incrementAndGet();
-            log.debug("#onConsumed {} {}", id, cfg == null ? null : cfg.getRates());
+            log.debug("#onConsumed {} {}", req, bandwidth);
         }
-        @Override public void onRejected(Object req, String id, int permits, LimiterConfig<?> cfg) {
+        public void onRejected(Object req, BandwidthState bandwidth) {
             rejection.incrementAndGet();
-            log.debug("#onRejected {} {}", id, cfg == null ? null : cfg.getRates());
+            log.debug("#onRejected {} {}", req, bandwidth);
         }
         public long getRequests() {
             return requests.get();

@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 @RestController
@@ -68,13 +70,17 @@ public class HomeController implements ErrorController {
         if (!enumType.isEnum()) {
             throw new IllegalArgumentException("Expected enum type, found: " + enumType);
         }
-        Object [] enumConstants = enumType.getEnumConstants();
+        T [] enumConstants = enumType.getEnumConstants();
+
         if (enumConstants == null || enumConstants.length == 0) {
             return "";
         }
         StringBuilder buff = new StringBuilder();
-        for(Object enumConstant : enumConstants) {
-            Html.tag("option", "value", enumConstant, enumConstant, buff);
+        for(T enumConstant : enumConstants) {
+            Map<String, Object> attributes = new HashMap<>();
+            attributes.put("value", enumConstant.name());
+            attributes.put("title", enumConstant.toString());
+            Html.tag("option", attributes, enumConstant.name(), buff);
         }
         final String options = buff.toString();
 

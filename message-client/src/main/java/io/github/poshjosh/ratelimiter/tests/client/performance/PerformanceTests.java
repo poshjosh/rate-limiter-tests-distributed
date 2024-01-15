@@ -103,12 +103,9 @@ public class PerformanceTests extends AbstractTests implements TestProcess {
     }
 
     private void startTests(String id, List<Usage> resultBuffer) {
-        final RequestSpreadType requestSpreadType = performanceTestData.getRequestSpreadType();
-        final double percent = (double)performanceTestData.getPercent() / 100;
-        if (percent < 0) {
-            throw new IllegalArgumentException("Performance test percent < 0: " + percent);
-        }
-        PerformanceTestStrategy.of(requestSpreadType, this).run(id, resultBuffer, percent);
+        PerformanceTestStrategy
+                .of(performanceTestData.getRequestSpreadType(), this)
+                .run(id, resultBuffer, performanceTestData.getPercent());
     }
 
     @Override

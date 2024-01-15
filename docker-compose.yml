@@ -64,9 +64,9 @@ services:
       SERVER_PORT: 3333
       APP_MESSAGE_SERVER_URL: http://nginx:4444
       APP_RATE_LIMIT_MODE: "${RATE_LIMIT_MODE:-auto}"
-      APP_OUTPUT_DIR: "${OUTPUT_DIR:-/rate-limiter/logs/tests/performance}"
+      APP_OUTPUT_DIR: "${OUTPUT_DIR:-/logs/tests/performance}"
     volumes:
-      - "~/Library/Application Support/JetBrains/IntelliJIdea2022.3/scratches${OUTPUT_DIR:-/rate-limiter/logs/tests/performance}:${OUTPUT_DIR:-/rate-limiter/logs/tests/performance}"
+      - "~/.rate-limiter${OUTPUT_DIR:-/logs/tests/performance}:${OUTPUT_DIR:-/logs/tests/performance}"
 
 networks:
   message-network:

@@ -12,12 +12,12 @@ import java.util.Map;
 @Service
 public class UsageService {
     private static final BigDecimal ONE_MILLION = new BigDecimal(1_000_000); // Could also be 1024 * 1024
-    private final MessageServer.RateLimitingFilter rateLimitingFilter;
+    private final MessageServer.RateLimitingFilterImpl rateLimitingFilter;
     private final UsageRecorder usageRecorder;
     private final RateLimitMode rateLimitMode;
 
     public UsageService(
-            MessageServer.RateLimitingFilter rateLimitingFilter,
+            MessageServer.RateLimitingFilterImpl rateLimitingFilter,
             UsageRecorder usageRecorder,
             @Value("${app.rate-limit-mode}") String rateLimitModeString) {
         this.rateLimitingFilter = rateLimitingFilter;

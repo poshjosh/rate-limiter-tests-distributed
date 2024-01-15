@@ -7,36 +7,11 @@ import java.util.List;
 
 public interface PerformanceTestStrategy {
 
+    int DEFAULT_REQUESTS_PER_SECOND = 10;
+
     static PerformanceTestStrategy of(RequestSpreadType requestSpreadType, TestProcess testProcess) {
-        switch (requestSpreadType) {
-            case DYNAMIC: return ofDynamic(testProcess);
-            case STEEP_GAUSSIAN: return ofSteepGaussian(testProcess);
-            case RANDOM_1: return ofRandom1(testProcess);
-            case STEADY_1: return ofSteady1(testProcess);
-            case GAUSSIAN:
-            default: return ofGaussian(testProcess);
-        }
+        return PerformanceTestStrategyFactory.getStrategy(requestSpreadType, testProcess);
     }
 
-    static PerformanceTestStrategy ofDynamic(TestProcess testProcess) {
-        return new DynamicPerformanceTestStrategy(testProcess);
-    }
-
-    static PerformanceTestStrategy ofSteepGaussian(TestProcess testProcess) {
-        return new SteepGaussianPerformanceTestStrategy(testProcess);
-    }
-
-    static PerformanceTestStrategy ofGaussian(TestProcess testProcess) {
-        return new GaussianPerformanceTestStrategy(testProcess);
-    }
-
-    static PerformanceTestStrategy ofRandom1(TestProcess testProcess) {
-        return new Random1PerformanceTestStrategy(testProcess);
-    }
-
-    static PerformanceTestStrategy ofSteady1(TestProcess testProcess) {
-        return new Steady1PerformanceTestStrategy(testProcess);
-    }
-
-    void run(String id, List<Usage> resultBuffer, double percent);
+    void run(String id, List<Usage> resultBuffer, int percent);
 }

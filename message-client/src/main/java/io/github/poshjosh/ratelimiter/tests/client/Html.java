@@ -1,5 +1,6 @@
 package io.github.poshjosh.ratelimiter.tests.client;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 
@@ -39,12 +40,16 @@ public final class Html {
         return tag(tagName, attrName, attrValue, content, new StringBuilder());
     }
     public static StringBuilder tag(String tagName, String attrName, Object attrValue, Object content, StringBuilder appendTo) {
+        Map attributes = attrName == null ? Collections.emptyMap() :
+                Collections.singletonMap(attrName, attrValue);
+        return tag(tagName, attributes, content, appendTo);
+    }
+    public static StringBuilder tag(String tagName, Map attributes, Object content, StringBuilder appendTo) {
         Objects.requireNonNull(tagName);
         Objects.requireNonNull(content);
+        Objects.requireNonNull(attributes);
         appendTo.append('<').append(tagName);
-        if (attrName != null && attrValue != null) {
-            appendTo.append(' ').append(attrName).append("=\"").append(attrValue).append("\"");
-        }
+        attributes.forEach((k, v) -> appendTo.append(' ').append(k).append("=\"").append(v).append("\""));
         return appendTo.append('>').append(content)
                 .append('<').append('/').append(tagName).append('>');
     }

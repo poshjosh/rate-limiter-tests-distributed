@@ -2,6 +2,7 @@ package io.github.poshjosh.ratelimiter.tests.server;
 
 import io.github.poshjosh.ratelimiter.RateLimiter;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
+import io.github.poshjosh.ratelimiter.bandwidths.BandwidthState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -40,5 +41,8 @@ public class ManualRateLimiter {
     private int getTimeout(ServletRequest request) {
         final String timeoutStr = request.getParameter("timeout");
         return StringUtils.hasText(timeoutStr) ? Integer.parseInt(timeoutStr) : 0;
+    }
+    public BandwidthState getBandwidth() {
+        return rateLimiter.getBandwidth();
     }
 }

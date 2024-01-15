@@ -10,7 +10,7 @@ public class PerformanceTestData {
     private int iterations = 1;
     private int durationPerTestUser = 20;
 
-    private RequestSpreadType requestSpreadType = RequestSpreadType.STEEP_GAUSSIAN;
+    private RequestSpreadType requestSpreadType = RequestSpreadType.GAUSSIAN_11;
     public PerformanceTestData() { }
 
     public int getLimit() {

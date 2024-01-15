@@ -19,7 +19,7 @@ public final class FileUtil {
 
 //    public static void main(String... args) {
 //        final Path path = java.nio.file.Paths.get(System.getProperty("user.home") +
-//                        "/Library/Application Support/JetBrains/IntelliJIdea2022.3/scratches/rate-limiter/logs/tests/performance/4/0_auto-25-timeout-0-steady_1-work-50-percent-100-iterations-1-user-duration-20-A.csv")
+//                        "/Library/Application Support/JetBrains/IntelliJIdea2022.3/scratches/logs/tests/performance/4/0_auto-25-timeout-0-steady_1-work-50-percent-100-iterations-1-user-duration-20-A.csv")
 //                .toAbsolutePath().normalize();
 //        System.out.println("          File: " + path);
 //        if (Files.exists(path)) {
@@ -31,7 +31,9 @@ public final class FileUtil {
 
     public static Optional<Path> save(Path path, byte [] bytes) {
         if (Files.exists(path)) {
-            path = nextFileName(path);
+            Path newPath = nextFileName(path);
+            log.info("Updating file path from: {}, to: {}", path, newPath);
+            path = newPath;
         }
         try {
             path = Files.write(path, bytes, StandardOpenOption.CREATE,
@@ -91,7 +93,7 @@ public final class FileUtil {
         if (!RateLimitMode.Off.equals(rateLimitMode)) {
             b.append('-').append(data.getLimit()).append("-timeout-").append(data.getTimeout());
         }
-        return b.append('-').append(data.getRequestSpreadType().toString().toLowerCase())
+        return b.append('-').append(data.getRequestSpreadType().name().toLowerCase())
                 .append("-work-").append(data.getWork())
                 .append("-percent-").append(data.getPercent())
                 .append("-iterations-").append(data.getIterations())

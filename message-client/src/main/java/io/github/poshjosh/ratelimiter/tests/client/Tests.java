@@ -104,9 +104,9 @@ public class Tests extends AbstractTests {
         return sendRequest(uri, method, cookies, new HttpHeaders(), body, Object.class, "");
     }
 
-    protected <T> boolean shouldReturnStatus(ResponseEntity<T> responseEntity, int expectedStatus) {
+    protected <T> boolean shouldReturnStatus(ResponseEntity<T> responseEntity, int... expectedStatuses) {
         final int status = responseEntity.getStatusCodeValue();
-        final boolean result = super.shouldReturnStatus(responseEntity, expectedStatus);
+        final boolean result = super.shouldReturnStatus(responseEntity, expectedStatuses);
         final String resultStr = result ? "SUCCESS" : "FAILURE";
         log.debug(resultStr);
         final T body = responseEntity.getBody();

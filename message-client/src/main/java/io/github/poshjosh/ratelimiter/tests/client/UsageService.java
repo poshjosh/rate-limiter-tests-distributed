@@ -36,6 +36,7 @@ public class UsageService {
         this.outputDir = Paths.get(outputDir);
         this.rest = rest;
         this.rateComputer = rateComputer;
+        log.info("Rate limit mode: {}, output Dir: {}", this.rateLimitMode, this.outputDir);
     }
 
     public String performanceTests(PerformanceTestData performanceTestData) {

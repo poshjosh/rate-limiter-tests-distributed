@@ -14,6 +14,7 @@ import java.net.URI;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 
 public abstract class AbstractTests {
 
@@ -98,17 +99,17 @@ public abstract class AbstractTests {
         return response;
     }
 
-    protected <T> boolean shouldReturnStatus(ResponseEntity<T> responseEntity, int expectedStatus) {
-        return updateStats(responseEntity, expectedStatus);
+    protected <T> boolean shouldReturnStatus(ResponseEntity<T> responseEntity, int... expectedStatuses) {
+        return updateStats(responseEntity, expectedStatuses);
     }
 
-    protected <T> boolean updateStats(ResponseEntity<T> responseEntity, int expectedStatus) {
+    protected <T> boolean updateStats(ResponseEntity<T> responseEntity, int... expectedStatuses) {
         final int status = responseEntity.getStatusCodeValue();
-        if (expectedStatus != status) {
+        if (IntStream.of(expectedStatuses).anyMatch(expected -> expected == status)) {
+            return true;
+        } else {
             failureCount.incrementAndGet();
             return false;
-        } else {
-            return true;
         }
     }
 
