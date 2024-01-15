@@ -8,12 +8,12 @@ import java.time.LocalTime;
 
 public class Main {
 
-    @Rate(name = "class", permits = 2)
+    @Rate(name = "classRate", permits = 2)
     static class RateLimitedResource {
         final RateLimiter limiter = RateLimiterFactory
-                .getLimiter(RateLimitedResource.class, "method");
+                .getLimiter(RateLimitedResource.class, "methodRate");
 
-        @Rate(name = "method", permits = 1)
+        @Rate(name = "methodRate", permits = 1)
         void consume() {
             boolean withinLimit = limiter.tryAcquire(1);
             System.out.println(LocalTime.now() + " #consume(), within limit: " + withinLimit);
