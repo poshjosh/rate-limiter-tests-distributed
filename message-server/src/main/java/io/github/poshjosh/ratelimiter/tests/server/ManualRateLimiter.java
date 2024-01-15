@@ -43,6 +43,6 @@ public class ManualRateLimiter {
         return StringUtils.hasText(timeoutStr) ? Integer.parseInt(timeoutStr) : 0;
     }
     public BandwidthState getBandwidth() {
-        return rateLimiter.getBandwidth();
+        return rateLimiter == null ? Bandwidth.UNLIMITED : rateLimiter.getBandwidth();
     }
 }
