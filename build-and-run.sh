@@ -31,20 +31,37 @@ cleanPackage "user-service"
 
 DIR_INDEX=11
 
-function run() {
+function validateRateLimitMode() {
+  local isValid=false
+  if [ "$RATE_LIMIT_MODE" = "auto" ] ; then isValid=true; fi
+  if [ "$RATE_LIMIT_MODE" = "manual" ] ; then isValid=true; fi
+  if [ "$RATE_LIMIT_MODE" = "off" ] ; then isValid=true; fi
+  if [ "$isValid" = false ] ; then
+    printf "\nInvalid rate limit mode: %s\n" "$RATE_LIMIT_MODE"
+    exit 1
+  else
+    printf "\nRate limit mode: %s\n" "$RATE_LIMIT_MODE"
+  fi
+}
+
+function launchApplications() {
 
   docker-compose down
 
   # We got port already in use a couple of times. So we sleep between shutdown and startup.
   sleep 3
 
-  RATE_LIMIT_MODE="$1" \
-      OUTPUT_DIR=/logs/tests/performance/"$DIR_INDEX" \
-          docker-compose up -d --build --scale message-server=3 --scale message-client=1 --scale redis-cache=1
+  export RATE_LIMIT_MODE
+  OUTPUT_DIR=/logs/tests/performance/"$DIR_INDEX" \
+        docker-compose up -d --build --scale message-server=3 --scale message-client=1 --scale redis-cache=1
 
   docker exec rate-limiter-tests-distributed-redis-cache-1 sh \
       -c 'redis-cli FLUSHALL && echo "SUCCESSFULLY FLUSHED CACHE" || echo "FAILED TO FLUSH CACHE"'
 }
 
-# [auto|manual|off]
-run "auto"
+printf "\nEnter rate limit mode. One of: auto/manual/off\n"
+read -r RATE_LIMIT_MODE
+
+validateRateLimitMode
+
+launchApplications
