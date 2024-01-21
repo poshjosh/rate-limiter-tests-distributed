@@ -43,8 +43,10 @@ public class MessageService {
             throw new InvalidRequestException("message#id");
         }
         synchronized (messages) {
-            message.setId(Long.valueOf(messages.size()));
+            final Long id = Long.valueOf(messages.size());
+            message.setId(id);
             messages.put(message.getId(), message);
+            log.debug("#addMessage({}), result = {}", id, message);
             return message;
         }
     }
@@ -52,7 +54,9 @@ public class MessageService {
     public int countMessages() {
         log.debug("#countMessages()");
         synchronized (messages) {
-            return messages.size();
+            int result = messages.size();
+            log.debug("#countMessages(), result = {}", result);
+            return result;
         }
     }
 
@@ -62,14 +66,18 @@ public class MessageService {
             throw new InvalidRequestException("id");
         }
         synchronized (messages) {
-            return Optional.of(messages.get(id));
+            Optional<Message> result = Optional.of(messages.get(id));
+            log.debug("#getMessage({}), result = {}", id, result);
+            return result;
         }
     }
 
     public List<Message> getMessages() {
         log.debug("#getMessages()");
         synchronized (messages) {
-            return Collections.unmodifiableList(new ArrayList<>(messages.values()));
+            List<Message> result = Collections.unmodifiableList(new ArrayList<>(messages.values()));
+            log.debug("#getMessages(), result = {}", result);
+            return result;
         }
     }
 
@@ -79,7 +87,9 @@ public class MessageService {
             throw new InvalidRequestException("id");
         }
         synchronized (messages) {
-            return messages.remove(id) != null;
+            final boolean result = messages.remove(id) != null;
+            log.debug("#removeMessage({}), result = {}", id, result);
+            return result;
         }
     }
 

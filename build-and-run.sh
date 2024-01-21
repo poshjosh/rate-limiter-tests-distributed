@@ -15,6 +15,7 @@
 ########################################
 
 MVN_SETTING="$HOME/dev_looseboxes/.m2/settings.xml"
+DEFAULT_RATE_LIMIT_MODE="auto" # auto/manual/off
 
 function cleanPackage() {
 
@@ -29,9 +30,15 @@ cleanPackage "message-client"
 cleanPackage "message-server"
 cleanPackage "user-service"
 
-DIR_INDEX=11
+function validateUserInputs() {
+  if [ -z ${RATE_LIMIT_MODE+x} ] || [ "$RATE_LIMIT_MODE" == '' ]; then
+    RATE_LIMIT_MODE="$DEFAULT_RATE_LIMIT_MODE"
+  fi
 
-function validateRateLimitMode() {
+  if [ -z ${DIR_INDEX+x} ] || [ "$DIR_INDEX" == '' ]; then
+    DIR_INDEX=$(date +%s%3)
+  fi
+
   local isValid=false
   if [ "$RATE_LIMIT_MODE" = "auto" ] ; then isValid=true; fi
   if [ "$RATE_LIMIT_MODE" = "manual" ] ; then isValid=true; fi
@@ -41,6 +48,7 @@ function validateRateLimitMode() {
     exit 1
   else
     printf "\nRate limit mode: %s\n" "$RATE_LIMIT_MODE"
+    printf "\nDirectory id: %s\n" "$DIR_INDEX"
   fi
 }
 
@@ -59,9 +67,12 @@ function launchApplications() {
       -c 'redis-cli FLUSHALL && echo "SUCCESSFULLY FLUSHED CACHE" || echo "FAILED TO FLUSH CACHE"'
 }
 
-printf "\nEnter rate limit mode. One of: auto/manual/off\n"
+printf "\nEnter rate limit mode. One of: auto/manual/off. Default is: %s\n" "$DEFAULT_RATE_LIMIT_MODE"
 read -r RATE_LIMIT_MODE
 
-validateRateLimitMode
+printf "\nEnter directory id. If none we will use random value\n"
+read -r DIR_INDEX
+
+validateUserInputs
 
 launchApplications

@@ -32,7 +32,7 @@ public class MessageController {
                 .body(Trace.addGetAndClear(message));
     }
 
-    @PostMapping(path + "/count")
+    @GetMapping(path + "/count")
     @Rate(permits=5, timeUnit=TimeUnit.MINUTES)
     public ResponseEntity<Integer> countMessages() {
         log.debug("#countMessages()");

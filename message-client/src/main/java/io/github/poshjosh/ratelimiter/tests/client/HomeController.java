@@ -5,6 +5,7 @@ import io.github.poshjosh.ratelimiter.tests.client.performance.RequestSpreadType
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.servlet.error.ErrorController;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.RequestDispatcher;
@@ -18,9 +19,16 @@ public class HomeController implements ErrorController {
 
     private final Logger log = LoggerFactory.getLogger(HomeController.class);
 
+    private final Rest rest;
     private final UsageService usageService;
-    public HomeController(UsageService usageService) {
+    public HomeController(Rest rest, UsageService usageService) {
+        this.rest = rest;
         this.usageService = usageService;
+    }
+
+    @GetMapping("/forward")
+    public ResponseEntity<Object> forwardToServer(@RequestParam("to") String to) {
+        return rest.getFromServer(to, Object.class, e -> e.toString());
     }
 
     @RequestMapping("/error")

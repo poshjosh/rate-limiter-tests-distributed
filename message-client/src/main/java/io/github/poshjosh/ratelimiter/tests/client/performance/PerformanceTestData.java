@@ -5,12 +5,12 @@ import java.util.Objects;
 public class PerformanceTestData {
     private int limit = 25;
     private int timeout = 0;
-    private int work = 50;
+    private int work = 100;
     private int percent = 100;
     private int iterations = 1;
     private int durationPerTestUser = 20;
 
-    private RequestSpreadType requestSpreadType = RequestSpreadType.GAUSSIAN_11;
+    private RequestSpreadType requestSpreadType = RequestSpreadType.STEEP_GAUSSIAN_5;
     public PerformanceTestData() { }
 
     public int getLimit() {

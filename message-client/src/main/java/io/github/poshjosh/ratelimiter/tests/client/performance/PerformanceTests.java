@@ -2,11 +2,13 @@ package io.github.poshjosh.ratelimiter.tests.client.performance;
 
 import io.github.poshjosh.ratelimiter.tests.client.AbstractTests;
 import io.github.poshjosh.ratelimiter.tests.client.ResourcePaths;
+import io.github.poshjosh.ratelimiter.tests.client.Rest;
 import io.github.poshjosh.ratelimiter.tests.client.performance.strategy.PerformanceTestStrategy;
 import io.github.poshjosh.ratelimiter.tests.client.performance.strategy.TestProcess;
 import io.github.poshjosh.ratelimiter.tests.client.util.MathUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 
 import java.math.BigDecimal;
@@ -23,10 +25,6 @@ public class PerformanceTests extends AbstractTests implements TestProcess {
     private final BigDecimal ONE_THOUSAND = BigDecimal.valueOf(1000);
     private long startTime;
 
-    private final URI baseUri;
-
-    private final URI uri;
-
     private final PerformanceTestsResultHandler resultHandler;
 
     private final PerformanceTestData performanceTestData;
@@ -38,12 +36,15 @@ public class PerformanceTests extends AbstractTests implements TestProcess {
     public PerformanceTests(
             URI baseUri, PerformanceTestData performanceTestData,
             PerformanceTestsResultHandler resultHandler) {
+        super(new Rest(uri(baseUri, performanceTestData).toString()));
         this.performanceTestData = Objects.requireNonNull(performanceTestData);
-        this.baseUri = Objects.requireNonNull(baseUri);
-        this.uri = ResourcePaths.performanceTestUri(baseUri, performanceTestData.getLimit(),
-                performanceTestData.getTimeout(), performanceTestData.getWork());
         this.resultHandler = resultHandler;
         this.executorService = Executors.newCachedThreadPool();
+    }
+
+    private static URI uri(URI baseUri, PerformanceTestData performanceTestData) {
+        return ResourcePaths.performanceTestUri(baseUri, performanceTestData.getLimit(),
+                performanceTestData.getTimeout(), performanceTestData.getWork());
     }
 
     protected String doRun() {
@@ -75,7 +76,7 @@ public class PerformanceTests extends AbstractTests implements TestProcess {
         }
 
         List<?> usageRateResponse = sendGetRequest(
-                baseUri.resolve(ResourcePaths.USAGE_PATH), List.class, Collections.emptyList()).getBody();
+                ResourcePaths.USAGE_PATH, List.class, Collections.emptyList()).getBody();
         List<Usage> usageRate = usageRateResponse.stream()
                 .map(oval -> (Map)oval)
                 .map(map -> new Usage(toBigDecimal(map, "amount"), toBigDecimal(map, "memory")))
@@ -98,8 +99,7 @@ public class PerformanceTests extends AbstractTests implements TestProcess {
     }
 
     private Map fetchStats() {
-        return sendGetRequest(
-                baseUri.resolve(ResourcePaths.USAGE_SUMMARY_PATH), Map.class, Collections.emptyMap()).getBody();
+        return sendGetRequest(ResourcePaths.USAGE_SUMMARY_PATH, Map.class, Collections.emptyMap()).getBody();
     }
 
     private void startTests(String id, List<Usage> resultBuffer) {
@@ -176,6 +176,6 @@ public class PerformanceTests extends AbstractTests implements TestProcess {
     }
 
     private ResponseEntity<Object> sendGetUsageRequest(Object bodyIfNone) {
-        return sendGetRequest(uri, Object.class, bodyIfNone);
+        return sendGetRequest("", Object.class, bodyIfNone);
     }
 }

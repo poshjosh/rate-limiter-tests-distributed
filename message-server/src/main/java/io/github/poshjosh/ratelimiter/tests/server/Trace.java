@@ -1,5 +1,6 @@
 package io.github.poshjosh.ratelimiter.tests.server;
 
+import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
@@ -15,7 +16,8 @@ public final class Trace extends AppenderBase<ILoggingEvent> {
 
     private static final ThreadLocal<List<Message>> trace = new ThreadLocal<>();
 
-    private static final String prefixToAccept = "io.github.poshjosh.ratelimiter.";
+    private static final Level MIN_LOG_LEVEL = Level.DEBUG;
+    private static final String PREFIX_TO_ACCEPT = "io.github.poshjosh.ratelimiter.";
 
     private Trace() {}
 
@@ -74,8 +76,11 @@ public final class Trace extends AppenderBase<ILoggingEvent> {
 
     @Override
     protected void append(ILoggingEvent iLoggingEvent) {
+        if (!acceptLevel(iLoggingEvent.getLevel())) {
+            return;
+        }
         String loggerName = iLoggingEvent.getLoggerName();
-        if (!accept(loggerName)) {
+        if (!acceptMessage(loggerName)) {
             return;
         }
         int index = loggerName.lastIndexOf('.');
@@ -83,10 +88,13 @@ public final class Trace extends AppenderBase<ILoggingEvent> {
         Trace.add(name + iLoggingEvent.getFormattedMessage());
     }
 
-    public static boolean accept(String message) {
-        if (prefixToAccept.isEmpty()) {
+    public static boolean acceptMessage(String message) {
+        if (PREFIX_TO_ACCEPT.isEmpty()) {
             return true;
         }
-        return message.startsWith(prefixToAccept);
+        return message.startsWith(PREFIX_TO_ACCEPT);
+    }
+    public static boolean acceptLevel(Level level) {
+        return level.isGreaterOrEqual(MIN_LOG_LEVEL);
     }
 }

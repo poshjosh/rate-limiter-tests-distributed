@@ -24,11 +24,13 @@ public abstract class AbstractTests {
     private static AtomicInteger totalCount = new AtomicInteger();
     private static AtomicInteger failureCount = new AtomicInteger();
     private static final AtomicBoolean inProgress = new AtomicBoolean();
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final Rest rest;
 
     private final StringBuilder output = new StringBuilder();
 
-    protected AbstractTests() { }
+    protected AbstractTests(Rest rest) {
+        this.rest = Objects.requireNonNull(rest);
+    }
 
     protected abstract String doRun();
 
@@ -64,39 +66,23 @@ public abstract class AbstractTests {
         }
     }
 
-    protected <T> ResponseEntity<T> sendGetRequest(URI uri, Class<T> responseType, T bodyIfNone) {
-        return sendRequest(uri, HttpMethod.GET, Collections.emptyList(), new HttpHeaders(), null, responseType, bodyIfNone);
+    protected <T> ResponseEntity<T> sendGetRequest(String path, Class<T> responseType, T bodyIfNone) {
+        return sendRequest(path, HttpMethod.GET, Collections.emptyList(), new HttpHeaders(), null, responseType, bodyIfNone);
     }
 
     protected <T> ResponseEntity<T> sendRequest(
-            URI uri, HttpMethod method, Collection<String> cookies,
+            String path, HttpMethod method, Collection<String> cookies,
             HttpHeaders headers, Message requestBody, Class<T> responseType, T bodyIfNone) {
-        if (cookies != null && !cookies.isEmpty()) {
-            headers.put("Cookie", new ArrayList<>(cookies));
-        }
-        HttpEntity<Message> entity = new HttpEntity<>(requestBody, headers);
-        log.debug("{} {}, with cookies: {}", method, uri, cookies);
-        ResponseEntity<T> response;
         try {
             totalCount.incrementAndGet();
-            response = restTemplate.exchange(uri, method, entity, responseType);
-        } catch(HttpStatusCodeException e) {
-            log.warn(e.toString());
-            response = ResponseEntity.status(e.getStatusCode())
-                    .headers(e.getResponseHeaders())
-                    .body(CharSequence.class.isAssignableFrom(responseType) ? (T)e.getResponseBodyAsString() : bodyIfNone);
+            ResponseEntity<T> response = rest.sendRequest(
+                    path, method, cookies, headers, requestBody, responseType, bodyIfNone);
+            log(response);
+            return response;
         } catch (RestClientException e) {
             failureCount.incrementAndGet();
             throw e;
         }
-        T responseBody = response.getBody();
-        if (responseBody == null || responseBody.toString().isEmpty()) {
-            response = ResponseEntity.status(response.getStatusCode())
-                    .headers(response.getHeaders())
-                    .body(bodyIfNone);
-        }
-        log(response);
-        return response;
     }
 
     protected <T> boolean shouldReturnStatus(ResponseEntity<T> responseEntity, int... expectedStatuses) {
@@ -117,6 +103,17 @@ public abstract class AbstractTests {
         ++postedMessageCount;
         Message message = new Message();
         message.setText("random-message" + (postedMessageCount));
+        return message;
+    }
+
+    protected Message getMessageZero() {
+        return getMessageZero("Server response has no body");
+    }
+
+    protected Message getMessageZero(String text) {
+        Message message = new Message();
+        message.setId(0L);
+        message.setText(text);
         return message;
     }
 

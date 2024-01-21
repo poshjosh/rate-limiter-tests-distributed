@@ -6,10 +6,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 
-import java.net.URI;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 public class Tests extends AbstractTests {
     private static final Logger log = LoggerFactory.getLogger(Tests.class);
@@ -18,10 +17,10 @@ public class Tests extends AbstractTests {
     private static final int CREATED = 201;
     private static final int TOO_MANY = 429;
 
-    private final URI uri;
-
-    public Tests(URI uri) {
-        this.uri = Objects.requireNonNull(uri);
+    private final Rest serverRestService;
+    public Tests(Rest serverRestService) {
+        super(serverRestService.withPath(ResourcePaths.MESSAGE_PATH));
+        this.serverRestService = serverRestService;
     }
 
     protected String doRun() {
@@ -32,9 +31,19 @@ public class Tests extends AbstractTests {
         // See the associated rest endpoint having the rate limit and condition
         for (int i = 0; i < 5; i++) {
             shouldReturnStatus(givenAllEntitiesAreGotten(noCookies), OK);
+
+            ResponseEntity<Object> response = getLastPutToCache();
+            Object lastPutToCache = response == null ? null : response.getBody();
+            System.out.println("Last put to cache = " + lastPutToCache);
+            if (lastPutToCache == null || lastPutToCache instanceof Throwable) {
+                log.warn("!!! CACHE NOT WORKING AS EXPECTED !!!");
+                //throw new RuntimeException("Cache not working as expected");
+            }
         }
 
-        List<String> cookies = getCookies(givenAllEntitiesAreGotten(noCookies));
+        ResponseEntity<List> responseList = givenAllEntitiesAreGotten(noCookies);
+        List<String> cookies = getCookies(responseList);
+        shouldReturnStatus(responseList, OK);
 
         // For POST, each session (identified by sessionId) can post only once per minute
         // See the associated rest endpoint having the rate limit and condition
@@ -74,44 +83,51 @@ public class Tests extends AbstractTests {
         return "";
     }
 
+    protected ResponseEntity<Object> getLastPutToCache() {
+        return serverRestService.getFromServer("/caches/last/put", Object.class, e -> e.toString());
+    }
+
+    protected ResponseEntity<Object> getLastGottenFromCache() {
+        return serverRestService.getFromServer("/caches/last/gotten", Object.class, e -> e.toString());
+    }
+
     private ResponseEntity<List> givenAllEntitiesAreGotten(List<String> cookies) {
         return givenAllEntitiesAreGotten(cookies, new HttpHeaders());
     }
 
     private ResponseEntity<List> givenAllEntitiesAreGotten(List<String> cookies, HttpHeaders headers) {
-        return sendRequest(uri, HttpMethod.GET, cookies, headers, null, List.class, Collections.emptyList());
+        return sendRequest("", HttpMethod.GET, cookies, headers, null, List.class,
+                Collections.singletonList(getMessageZero()));
     }
 
     private ResponseEntity<Object> givenEntityIsGotten(List<String> cookies, long id) {
-        return sendRequest(HttpMethod.GET, cookies, id);
+        return sendLongRequest(HttpMethod.GET, cookies, id);
     }
 
     private ResponseEntity<Object> givenEntityIsPosted(List<String> cookies) {
-        return sendRequest(HttpMethod.POST, cookies, getRandomRequestBody());
+        return sendRequest("", HttpMethod.POST, cookies, new HttpHeaders(),
+                getRandomRequestBody(), Object.class, getRandomRequestBody());
     }
 
     private ResponseEntity<Object> givenEntityIsDeleted(List<String> cookies, long id) {
-        URI uri = URI.create(this.uri + "/" + id);
-        return sendRequest(uri, HttpMethod.DELETE, cookies, new HttpHeaders(), null, Object.class, "");
+        return sendRequest("/" + id, HttpMethod.DELETE, cookies, new HttpHeaders(), null,
+                Object.class, false);
     }
 
-    private ResponseEntity<Object> sendRequest(HttpMethod method, List<String> cookies, long id) {
-        URI uri = URI.create(this.uri + "/" + id);
-        return sendRequest(uri, method, cookies, new HttpHeaders(), null, Object.class, "");
-    }
-
-    private ResponseEntity<Object> sendRequest(HttpMethod method, List<String> cookies, Message body) {
-        return sendRequest(uri, method, cookies, new HttpHeaders(), body, Object.class, "");
+    private ResponseEntity<Object> sendLongRequest(HttpMethod method, List<String> cookies, long id) {
+        return sendRequest("/" + id, method, cookies, new HttpHeaders(), null, Object.class,
+                "Server response has no content");
     }
 
     protected <T> boolean shouldReturnStatus(ResponseEntity<T> responseEntity, int... expectedStatuses) {
         final int status = responseEntity.getStatusCodeValue();
-        final boolean result = super.shouldReturnStatus(responseEntity, expectedStatuses);
-        final String resultStr = result ? "SUCCESS" : "FAILURE";
+        final boolean success = super.shouldReturnStatus(responseEntity, expectedStatuses);
+        final String resultStr = success ? "<br><br/>SUCCESS, status = " + status :
+                "<br/><br/>FAILURE, status = " + status + ", expected any of: " + Arrays.toString(expectedStatuses);
         log.debug(resultStr);
         final T body = responseEntity.getBody();
-        appendOutput("<br/><br/>").appendOutput(resultStr).appendOutput(" ").appendOutput(status)
-                .appendOutput(" Trace:<br/>").appendOutput(body);
-        return result;
+        appendOutput(resultStr)
+                .appendOutput(" Request body:<br/>").appendOutput(body);
+        return success;
     }
 }

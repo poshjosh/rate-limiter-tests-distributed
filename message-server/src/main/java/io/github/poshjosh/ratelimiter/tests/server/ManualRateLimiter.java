@@ -2,9 +2,9 @@ package io.github.poshjosh.ratelimiter.tests.server;
 
 import io.github.poshjosh.ratelimiter.RateLimiter;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
-import io.github.poshjosh.ratelimiter.bandwidths.BandwidthState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import javax.servlet.ServletRequest;
@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class ManualRateLimiter {
     private static final Logger log = LoggerFactory.getLogger(ManualRateLimiter.class);
-    private RateLimiter rateLimiter;
+    private RateLimiter delegate;
     public boolean tryConsume(ServletRequest request) {
         final String uri = ((HttpServletRequest)request).getRequestURI();
         // Our rate limited endpoints are of format /limited/[DIGITS]
@@ -26,13 +26,13 @@ public class ManualRateLimiter {
         if (!uri.contains(UsageController.limited)) {
             return true;
         }
-        if (rateLimiter == null) {
+        if (delegate == null) {
             final int permitsPerSec = getRateSeconds(uri);
-            rateLimiter = permitsPerSec > 0 ? RateLimiter.of(Bandwidth.allOrNothing(permitsPerSec)) : RateLimiter.NO_LIMIT;
+            delegate = permitsPerSec > 0 ? RateLimiter.of(Bandwidth.allOrNothing(permitsPerSec)) : RateLimiter.NO_LIMIT;
             log.info("Completed setup of manual rate limiting at {} permits per second", permitsPerSec);
         }
         final int timeout = getTimeout(request);
-        return rateLimiter.tryAcquire(1, timeout, TimeUnit.SECONDS);
+        return delegate.tryAcquire(1, timeout, TimeUnit.SECONDS);
     }
     private int getRateSeconds(String uri) {
         final int offset = uri.lastIndexOf('/');
@@ -42,7 +42,15 @@ public class ManualRateLimiter {
         final String timeoutStr = request.getParameter("timeout");
         return StringUtils.hasText(timeoutStr) ? Integer.parseInt(timeoutStr) : 0;
     }
-    public BandwidthState getBandwidth() {
-        return rateLimiter == null ? Bandwidth.UNLIMITED : rateLimiter.getBandwidth();
+    public @Nullable Bandwidth getBandwidth() {
+        try {
+            return delegate == null ? Bandwidth.UNLIMITED : delegate.getBandwidth();
+        } catch(Exception e) {
+            return null;
+        }
+    }
+
+    @Override public String toString() {
+        return "ManualRateLimiter{" + "delegate=" + delegate + '}';
     }
 }

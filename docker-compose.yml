@@ -20,12 +20,20 @@ services:
     image: message-server:latest
     expose:
       - "5555"
+    ports:
+      - "5555-5560:5555"
     networks:
       - message-network
     restart: unless-stopped
     depends_on:
       - redis-cache
     environment:
+#      LOGGING_LEVEL_IO_GITHUB_POSHJOSH_RATELIMITER_TESTS_SERVER: debug
+      LOGGING_LEVEL_IO_GITHUB_POSHJOSH_RATELIMITER_TESTS_SERVER_MESSAGESERVER: debug
+#      logging.level.io.github.poshjosh.ratelimiter.bandwidths.DefaultRateToBandwidthConverter: trace
+#      logging.level.io.github.poshjosh.ratelimiter.RateContext: trace
+#      logging.level.io.github.poshjosh.ratelimiter.RateLimiterComposite: trace
+#      logging.level.io.github.poshjosh.ratelimiter.MatchUtil: trace
       JVM_XMS: 1g
       JVM_XMX: 1g
       #JVM_GC: +UseG1GC

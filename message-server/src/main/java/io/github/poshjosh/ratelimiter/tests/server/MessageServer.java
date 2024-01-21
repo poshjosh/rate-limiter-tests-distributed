@@ -2,10 +2,9 @@ package io.github.poshjosh.ratelimiter.tests.server;
 
 import io.github.poshjosh.ratelimiter.RateLimiter;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
-import io.github.poshjosh.ratelimiter.bandwidths.BandwidthState;
 import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
-import io.github.poshjosh.ratelimiter.web.core.RateLimiterContext;
-import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
+import io.github.poshjosh.ratelimiter.util.RateLimitProperties;
+import io.github.poshjosh.ratelimiter.web.core.WebRateLimiterContext;
 import io.github.poshjosh.ratelimiter.web.spring.RateLimitPropertiesSpring;
 import io.github.poshjosh.ratelimiter.web.spring.RateLimitingFilter;
 import org.slf4j.Logger;
@@ -21,6 +20,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
+import org.springframework.lang.Nullable;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -90,9 +90,13 @@ public class MessageServer {
         private void applyManualRateLimit(ServletRequest request, ServletResponse response,
                 FilterChain chain) throws IOException, ServletException {
             final boolean success = manualRateLimiter.tryConsume(request);
-            this.onConsumed(request, manualRateLimiter.getBandwidth());
+            RequestData requestData = null;
+            if (request instanceof HttpServletRequest) {
+                requestData = new RequestData((HttpServletRequest)request);
+            }
+            this.onConsumed(requestData, manualRateLimiter);
             if (!success) {
-                this.onRejected(request, manualRateLimiter.getBandwidth());
+                this.onRejected(requestData, manualRateLimiter);
                 this.onLimitExceeded((HttpServletRequest)request, (HttpServletResponse)response, chain);
                 return;
             }
@@ -102,9 +106,10 @@ public class MessageServer {
         protected boolean tryConsume(HttpServletRequest request) {
             final RateLimiter rateLimiter = getRateLimiterFactory().getRateLimiter(request);
             final boolean success = rateLimiter.tryAcquire(getTimeout(request), TimeUnit.SECONDS);
-            onConsumed(request, rateLimiter.getBandwidth());
+            final RequestData requestData = new RequestData(request);
+            onConsumed(requestData, rateLimiter);
             if (!success) {
-                onRejected(request, rateLimiter.getBandwidth());
+                onRejected(requestData, rateLimiter);
             }
             return success;
         }
@@ -121,16 +126,16 @@ public class MessageServer {
         }
 
         @Override
-        protected RateLimiterContext.Builder rateLimiterContextBuilder() {
+        protected WebRateLimiterContext.Builder rateLimiterContextBuilder() {
             return super.rateLimiterContextBuilder().store(store);
         }
-        public void onConsumed(Object req, BandwidthState bandwidth) {
+        public void onConsumed(RequestData requestData, Object rateLimiter) {
             consumption.incrementAndGet();
-            log.debug("#onConsumed {} {}", req, bandwidth);
+            log.debug("Consumed {}", rateLimiter);
         }
-        public void onRejected(Object req, BandwidthState bandwidth) {
+        public void onRejected(RequestData requestData, Object rateLimiter) {
             rejection.incrementAndGet();
-            log.debug("#onRejected {} {}", req, bandwidth);
+            log.debug("Rejected {}", rateLimiter);
         }
         public long getRequests() {
             return requests.get();
@@ -173,15 +178,32 @@ public class MessageServer {
             return lastPutKey.get();
         }
         @Override public Bandwidth get(String key) {
+            key = formatCacheKey(key);
             Bandwidth bandwidth = redisTemplate.opsForValue().get(key);
             lastGottenKey.set(key);
             log.debug("#get {}={}", key, bandwidth);
             return bandwidth;
         }
         @Override public void put(String key, Bandwidth bandwidth) {
+            key = formatCacheKey(key);
             redisTemplate.opsForValue().set(key, bandwidth);
             lastPutKey.set(key);
             log.debug("#put {}={}", key, bandwidth);
+        }
+
+        private String formatCacheKey(String key) {
+            // On examining the cache, we found the following prefix on sessionId's
+            // These prefixes, if left, may mangle our sessionId-relying logic.
+            key = removePrefix(key, "spring:session:sessions:expires:");
+            key = removePrefix(key, "spring:session:sessions:");
+            return removePrefix(key, "spring:session:expirations:");
+        }
+
+        private String removePrefix(String text, String prefixToRemove) {
+            if (text.startsWith(prefixToRemove)) {
+                text = text.substring(prefixToRemove.length());
+            }
+            return text;
         }
     }
 

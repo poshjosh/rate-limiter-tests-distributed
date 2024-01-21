@@ -23,7 +23,7 @@ public class MessageController {
     @GetMapping(ResourcePaths.TESTS_PATH)
     public String tests() {
         log.debug("#tests()");
-        return new Tests(rest.createServerUri(ResourcePaths.MESSAGE_PATH)).run();
+        return new Tests(rest).run();
     }
 
     @GetMapping(ResourcePaths.MESSAGE_PATH)

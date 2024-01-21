@@ -1,7 +1,7 @@
 package io.github.poshjosh.ratelimiter.tests.user;
 
 import io.github.poshjosh.ratelimiter.web.core.RateLimiterConfigurer;
-import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
+import io.github.poshjosh.ratelimiter.util.RateLimitProperties;
 import io.github.poshjosh.ratelimiter.web.javaee.RateLimitingDynamicFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
