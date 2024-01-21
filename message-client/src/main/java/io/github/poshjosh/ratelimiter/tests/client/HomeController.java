@@ -58,7 +58,8 @@ public class HomeController implements ErrorController {
                 .p(numberInput("percent", defaultValues.getPercent()))
                 .p(numberInput("iterations", defaultValues.getIterations()))
                 .p(numberInput("durationPerTestUser", defaultValues.getDurationPerTestUser()))
-                .p(enumInput("requestSpreadType", RequestSpreadType.class))
+                .p(enumInput("requestSpreadType", RequestSpreadType.class,
+                        defaultValues.getRequestSpreadType()))
                 .p("<input type=\"submit\" value=\"Submit\"/>")
                 .append("</form>")
                 .h3("Stats")
@@ -73,7 +74,7 @@ public class HomeController implements ErrorController {
                 .append(name).append("\" value=\"").append(value).append("\"/>").toString();
     }
 
-    private <T extends Enum> String enumInput(String name, Class<T> enumType) {
+    private <T extends Enum> String enumInput(String name, Class<T> enumType, T selected) {
         Objects.requireNonNull(name);
         if (!enumType.isEnum()) {
             throw new IllegalArgumentException("Expected enum type, found: " + enumType);
@@ -88,6 +89,9 @@ public class HomeController implements ErrorController {
             Map<String, Object> attributes = new HashMap<>();
             attributes.put("value", enumConstant.name());
             attributes.put("title", enumConstant.toString());
+            if (enumConstant.equals(selected)) {
+                attributes.put("selected", Boolean.TRUE);
+            }
             Html.tag("option", attributes, enumConstant.name(), buff);
         }
         final String options = buff.toString();

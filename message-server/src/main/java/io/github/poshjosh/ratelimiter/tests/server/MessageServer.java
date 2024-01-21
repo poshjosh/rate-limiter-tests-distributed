@@ -5,6 +5,7 @@ import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
 import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
 import io.github.poshjosh.ratelimiter.util.RateLimitProperties;
 import io.github.poshjosh.ratelimiter.web.core.WebRateLimiterContext;
+import io.github.poshjosh.ratelimiter.web.core.WebRateLimiterRegistry;
 import io.github.poshjosh.ratelimiter.web.spring.RateLimitPropertiesSpring;
 import io.github.poshjosh.ratelimiter.web.spring.RateLimitingFilter;
 import org.slf4j.Logger;
@@ -20,7 +21,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
-import org.springframework.lang.Nullable;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -77,6 +77,18 @@ public class MessageServer {
                 super.initFilterBean(); // Initialize rate limiting
             }
         }
+        @Override
+        protected WebRateLimiterContext.Builder rateLimiterContextBuilder() {
+            log.debug("Adding store: {}", store);
+            return super.rateLimiterContextBuilder().store(store);
+        }
+
+        @Override
+        protected WebRateLimiterRegistry rateLimiterRegistry(WebRateLimiterContext context) {
+            log.debug("Rate limiter context\n{}", context);
+            return super.rateLimiterRegistry(context);
+        }
+
         @Override public void doFilter(ServletRequest request, ServletResponse response,
                 FilterChain chain) throws IOException, ServletException {
             requests.incrementAndGet();
@@ -121,17 +133,12 @@ public class MessageServer {
         protected void onLimitExceeded(
                 HttpServletRequest req, HttpServletResponse res, FilterChain chain)
                 throws IOException {
-            log.debug("Too many requests");
+            //log.debug("Too many requests"); Already logged below
             res.sendError(429, Trace.getAndClear().toString());
-        }
-
-        @Override
-        protected WebRateLimiterContext.Builder rateLimiterContextBuilder() {
-            return super.rateLimiterContextBuilder().store(store);
         }
         public void onConsumed(RequestData requestData, Object rateLimiter) {
             consumption.incrementAndGet();
-            log.debug("Consumed {}", rateLimiter);
+            log.trace("Consumed {}", rateLimiter);
         }
         public void onRejected(RequestData requestData, Object rateLimiter) {
             rejection.incrementAndGet();
@@ -178,25 +185,15 @@ public class MessageServer {
             return lastPutKey.get();
         }
         @Override public Bandwidth get(String key) {
-            key = formatCacheKey(key);
             Bandwidth bandwidth = redisTemplate.opsForValue().get(key);
             lastGottenKey.set(key);
-            log.debug("#get {}={}", key, bandwidth);
+            log.trace("#get {} = {}", key, bandwidth);
             return bandwidth;
         }
         @Override public void put(String key, Bandwidth bandwidth) {
-            key = formatCacheKey(key);
             redisTemplate.opsForValue().set(key, bandwidth);
             lastPutKey.set(key);
-            log.debug("#put {}={}", key, bandwidth);
-        }
-
-        private String formatCacheKey(String key) {
-            // On examining the cache, we found the following prefix on sessionId's
-            // These prefixes, if left, may mangle our sessionId-relying logic.
-            key = removePrefix(key, "spring:session:sessions:expires:");
-            key = removePrefix(key, "spring:session:sessions:");
-            return removePrefix(key, "spring:session:expirations:");
+            log.trace("#put {} = {}", key, bandwidth);
         }
 
         private String removePrefix(String text, String prefixToRemove) {

@@ -28,8 +28,8 @@ services:
     depends_on:
       - redis-cache
     environment:
-#      LOGGING_LEVEL_IO_GITHUB_POSHJOSH_RATELIMITER_TESTS_SERVER: debug
-      LOGGING_LEVEL_IO_GITHUB_POSHJOSH_RATELIMITER_TESTS_SERVER_MESSAGESERVER: debug
+#      logging.level.io.github.poshjosh.ratelimiter.tests.server.MessageServer: debug
+#      logging.level.io.github.poshjosh.ratelimiter.RootNodes: trace
 #      logging.level.io.github.poshjosh.ratelimiter.bandwidths.DefaultRateToBandwidthConverter: trace
 #      logging.level.io.github.poshjosh.ratelimiter.RateContext: trace
 #      logging.level.io.github.poshjosh.ratelimiter.RateLimiterComposite: trace

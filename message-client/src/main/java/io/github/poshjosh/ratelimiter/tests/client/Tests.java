@@ -34,10 +34,8 @@ public class Tests extends AbstractTests {
 
             ResponseEntity<Object> response = getLastPutToCache();
             Object lastPutToCache = response == null ? null : response.getBody();
-            System.out.println("Last put to cache = " + lastPutToCache);
             if (lastPutToCache == null || lastPutToCache instanceof Throwable) {
-                log.warn("!!! CACHE NOT WORKING AS EXPECTED !!!");
-                //throw new RuntimeException("Cache not working as expected");
+                throw new RuntimeException("Cache may not be working as expected");
             }
         }
 
