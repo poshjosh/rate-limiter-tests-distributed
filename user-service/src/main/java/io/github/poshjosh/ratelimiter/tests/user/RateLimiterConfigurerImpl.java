@@ -1,7 +1,7 @@
 package io.github.poshjosh.ratelimiter.tests.user;
 
-import io.github.poshjosh.ratelimiter.web.core.Registries;
 import io.github.poshjosh.ratelimiter.web.core.RateLimiterConfigurer;
+import io.github.poshjosh.ratelimiter.web.core.registry.Registries;
 
 @javax.inject.Singleton
 public class RateLimiterConfigurerImpl implements RateLimiterConfigurer {
