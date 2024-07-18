@@ -10,7 +10,7 @@
     </parent>
 
     <groupId>io.github.poshjosh.testing</groupId>
-    <artifactId>test-module</artifactId>
+    <artifactId>message-util</artifactId>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
@@ -18,11 +18,4 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
-    <dependencies>
-        <dependency>
-            <groupId>io.github.poshjosh</groupId>
-            <artifactId>rate-limiter-web-core</artifactId>
-            <version>0.7.1</version>
-        </dependency>
-    </dependencies>
 </project>

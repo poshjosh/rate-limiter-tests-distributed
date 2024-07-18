@@ -33,6 +33,7 @@ public class Main {
                 .store(BandwidthsStore.<String>ofDefaults())
                 .build();
         RateLimiterRegistry<String> registry = RateLimiterRegistry.of(context);
-//        RateLimiterFactory<Object> factory = RateLimiterFactory.of(context);
+//        RateLimiterFactory<String> factory = registry.createRateLimiterFactory();
+//        RateLimiterFactory<String> factory = RateLimiterFactory.of(context);
     }
 }
