@@ -2,8 +2,10 @@ version: '3'
 services:
   redis-cache:
     image: redis:7.0-alpine
+    env_file:
+      - .env
     ports:
-      - "6379:6379"
+      - "${SPRING_REDIS_PORT:-6379}:${SPRING_REDIS_PORT:-6379}"
     networks:
       - message-network
     restart: unless-stopped
@@ -27,25 +29,20 @@ services:
     restart: unless-stopped
     depends_on:
       - redis-cache
+    env_file:
+      - .env
     environment:
-#      logging.level.io.github.poshjosh.ratelimiter.tests.server.MessageServer: debug
-#      logging.level.io.github.poshjosh.ratelimiter.RootNodes: trace
-#      logging.level.io.github.poshjosh.ratelimiter.bandwidths.DefaultRateToBandwidthConverter: trace
-#      logging.level.io.github.poshjosh.ratelimiter.RateContext: trace
-#      logging.level.io.github.poshjosh.ratelimiter.RateLimiterComposite: trace
-#      logging.level.io.github.poshjosh.ratelimiter.MatchUtil: trace
-      JVM_XMS: 1g
-      JVM_XMX: 1g
-      #JVM_GC: +UseG1GC
-      SERVER_PORT: 5555
-      SPRING_REDIS_HOST: redis-cache
-      SPRING_REDIS_PORT: 6379
-      SPRING_REDIS_DATABASE: 0
-      SPRING_REDIS_TIMEOUT: 60000
-      SPRING_CACHE_TYPE: redis
-      SPRING_CACHE_REDIS_CACHE_NULL_VALUES: false
-      APP_RATE_LIMIT_MODE: "${RATE_LIMIT_MODE:-auto}"
-  
+      JVM_XMS: "${JVM_XMS:-1g}"
+      JVM_XMX: "${JVM_XMX:-1g}"
+      SERVER_PORT: "${SERVER_PORT:-5555}"
+      SPRING_REDIS_HOST: "${SPRING_REDIS_HOST:-redis-cache}"
+      SPRING_REDIS_PORT: "${SPRING_REDIS_PORT:-6379}"
+      SPRING_REDIS_DATABASE: "${SPRING_REDIS_DATABASE:-0}"
+      SPRING_REDIS_TIMEOUT: "${SPRING_REDIS_TIMEOUT:-60000}"
+      SPRING_CACHE_TYPE: "${SPRING_CACHE_TYPE:-redis}"
+      SPRING_CACHE_REDIS_CACHE_NULL_VALUES: "${SPRING_CACHE_REDIS_CACHE_NULL_VALUES:-false}"
+      APP_RATE_LIMIT_MODE: "${APP_RATE_LIMIT_MODE:-auto}"
+
   nginx:
     image: nginx:latest
     ports:
@@ -68,13 +65,15 @@ services:
     networks:
       - message-network
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       SERVER_PORT: 3333
       APP_MESSAGE_SERVER_URL: http://nginx:4444
-      APP_RATE_LIMIT_MODE: "${RATE_LIMIT_MODE:-auto}"
-      APP_OUTPUT_DIR: "${OUTPUT_DIR:-/logs/tests/performance}"
+      APP_RATE_LIMIT_MODE: "${APP_RATE_LIMIT_MODE:-auto}"
+      APP_OUTPUT_DIR: "${APP_OUTPUT_DIR:-/logs/tests/performance/1}"
     volumes:
-      - "~/.rate-limiter${OUTPUT_DIR:-/logs/tests/performance}:${OUTPUT_DIR:-/logs/tests/performance}"
+      - "~/.rate-limiter${APP_OUTPUT_DIR:-/logs/tests/performance}:${APP_OUTPUT_DIR:-/logs/tests/performance}"
 
 networks:
   message-network:
