@@ -1,5 +1,6 @@
 package io.github.poshjosh.ratelimiter.tests.server;
 
+import io.github.poshjosh.ratelimiter.tests.server.model.Usage;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 

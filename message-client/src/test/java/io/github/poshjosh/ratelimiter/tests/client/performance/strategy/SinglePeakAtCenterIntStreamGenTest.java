@@ -1,7 +1,7 @@
 package io.github.poshjosh.ratelimiter.tests.client.performance.strategy;
 
-import io.github.poshjosh.ratelimiter.tests.client.performance.strategy.util.IntStreamGenerator;
-import io.github.poshjosh.ratelimiter.tests.client.performance.strategy.util.SinglePeakAtCenterIntStreamConfig;
+import io.github.poshjosh.ratelimiter.tests.client.tests.performance.strategy.util.IntStreamGenerator;
+import io.github.poshjosh.ratelimiter.tests.client.tests.performance.strategy.util.SinglePeakAtCenterIntStreamConfig;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;

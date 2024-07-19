@@ -1,13 +1,11 @@
 package io.github.poshjosh.ratelimiter.tests.client;
 
+import io.github.poshjosh.ratelimiter.tests.client.model.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -15,8 +13,6 @@ import org.springframework.web.client.RestTemplate;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import java.util.function.Function;
 
 @Component
@@ -33,16 +29,16 @@ public class Rest {
         return new Rest(remoteServerUrl + path);
     }
 
-    public URI createServerUri(String path) {
+    public URI createEndpoint(String path) {
         return URI.create(remoteServerUrl + path);
     }
 
-    public <T> ResponseEntity<T> getFromServer(String path, Class<T> resultType,
+    public <T> ResponseEntity<T> get(String path, Class<T> resultType,
             Function<RestClientException, T> onError) {
-        return get(createServerUri(path), resultType, onError);
+        return doGet(createEndpoint(path), resultType, onError);
     }
 
-    private <T> ResponseEntity<T> get(URI uri, Class<T> resultType,
+    private <T> ResponseEntity<T> doGet(URI uri, Class<T> resultType,
             Function<RestClientException, T> onError) {
         try {
             return restTemplate.getForEntity(uri, resultType);
@@ -52,18 +48,14 @@ public class Rest {
         }
     }
 
-    protected <T> ResponseEntity<T> sendGetRequest(String path, Class<T> responseType, T bodyIfNone) {
-        return sendRequest(path, HttpMethod.GET, Collections.emptyList(), new HttpHeaders(), null, responseType, bodyIfNone);
-    }
-
-    protected <T> ResponseEntity<T> sendRequest(
+    public <T> ResponseEntity<T> sendRequest(
             String path, HttpMethod method, Collection<String> cookies,
             HttpHeaders headers, Message requestBody, Class<T> responseType, T bodyIfNone) {
         if (cookies != null && !cookies.isEmpty()) {
             headers.put("Cookie", new ArrayList<>(cookies));
         }
         HttpEntity<Message> entity = new HttpEntity<>(requestBody, headers);
-        final URI uri = createServerUri(path);
+        final URI uri = createEndpoint(path);
         log.debug("{} {}, with cookies: {}", method, uri, cookies);
         ResponseEntity<T> response;
         try {

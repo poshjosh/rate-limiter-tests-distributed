@@ -19,7 +19,6 @@
         <module>message-server</module>
         <module>message-client</module>
         <module>user-service</module>
-        <module>test-module</module>
     </modules>
 
     <properties>

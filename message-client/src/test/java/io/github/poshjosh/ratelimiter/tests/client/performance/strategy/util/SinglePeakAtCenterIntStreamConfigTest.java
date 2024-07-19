@@ -1,5 +1,6 @@
 package io.github.poshjosh.ratelimiter.tests.client.performance.strategy.util;
 
+import io.github.poshjosh.ratelimiter.tests.client.tests.performance.strategy.util.SinglePeakAtCenterIntStreamConfig;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 

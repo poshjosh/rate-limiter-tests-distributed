@@ -13,31 +13,16 @@
 
 MVN_SETTINGS_FILE="$HOME/dev_looseboxes/.m2/settings.xml"
 
-function cleanPackage() {
+mvn clean package -s "$MVN_SETTINGS_FILE"
 
-  cd "$1" || (echo "Dir not found: $1" && exit 1)
+docker-compose down
 
-  mvn clean package -s "$MVN_SETTINGS_FILE" || (echo "mvn command failed for $1" && exit 1)
+# We got port already in use a couple of times.
+# So we sleep between shutdown and startup.
+sleep 3
 
-  cd .. || (echo "Could not change to parent dir of: $1" && exit 1)
-}
+docker-compose up -d --build --scale message-server=3 --scale message-client=1 --scale redis-cache=1
 
-function launch() {
+docker exec rate-limiter-tests-distributed-redis-cache-1 sh \
+    -c 'redis-cli FLUSHALL && echo "SUCCESSFULLY FLUSHED CACHE" || echo "FAILED TO FLUSH CACHE"'
 
-  docker-compose down
-
-  # We got port already in use a couple of times.
-  # So we sleep between shutdown and startup.
-  sleep 3
-
-  docker-compose up -d --build --scale message-server=3 --scale message-client=1 --scale redis-cache=1
-
-  docker exec rate-limiter-tests-distributed-redis-cache-1 sh \
-      -c 'redis-cli FLUSHALL && echo "SUCCESSFULLY FLUSHED CACHE" || echo "FAILED TO FLUSH CACHE"'
-}
-
-cleanPackage "message-client"
-cleanPackage "message-server"
-cleanPackage "user-service"
-
-launch

@@ -1,7 +1,7 @@
 package io.github.poshjosh.ratelimiter.tests.client.util;
 
-import io.github.poshjosh.ratelimiter.tests.client.performance.PerformanceTestData;
-import io.github.poshjosh.ratelimiter.tests.client.performance.RateLimitMode;
+import io.github.poshjosh.ratelimiter.tests.client.tests.performance.PerformanceTestData;
+import io.github.poshjosh.ratelimiter.tests.client.tests.performance.RateLimitMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

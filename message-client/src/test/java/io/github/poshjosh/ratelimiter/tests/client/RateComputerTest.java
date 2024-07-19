@@ -1,7 +1,7 @@
 package io.github.poshjosh.ratelimiter.tests.client;
 
-import io.github.poshjosh.ratelimiter.tests.client.performance.RateComputer;
-import io.github.poshjosh.ratelimiter.tests.client.performance.Usage;
+import io.github.poshjosh.ratelimiter.tests.client.tests.performance.RateComputer;
+import io.github.poshjosh.ratelimiter.tests.client.tests.performance.Usage;
 import io.github.poshjosh.ratelimiter.tests.client.util.MathUtil;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;

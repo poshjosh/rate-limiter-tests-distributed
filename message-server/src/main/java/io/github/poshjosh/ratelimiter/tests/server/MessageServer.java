@@ -3,6 +3,10 @@ package io.github.poshjosh.ratelimiter.tests.server;
 import io.github.poshjosh.ratelimiter.RateLimiter;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
 import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
+import io.github.poshjosh.ratelimiter.tests.server.model.RateLimitMode;
+import io.github.poshjosh.ratelimiter.tests.server.services.MessageService;
+import io.github.poshjosh.ratelimiter.tests.server.util.Trace;
+import io.github.poshjosh.ratelimiter.tests.server.util.EnvLogger;
 import io.github.poshjosh.ratelimiter.util.RateLimitProperties;
 import io.github.poshjosh.ratelimiter.web.core.WebRateLimiterContext;
 import io.github.poshjosh.ratelimiter.web.core.WebRateLimiterRegistry;
@@ -44,7 +48,7 @@ public class MessageServer {
     private static final Logger log = LoggerFactory.getLogger(MessageServer.class);
 
     public static void main(String[] args) {
-        Startup.log(SpringApplication.run(MessageServer.class, args).getEnvironment());
+        EnvLogger.log(SpringApplication.run(MessageServer.class, args).getEnvironment());
         Trace.init(); // Must be initialized after spring application startup
     }
 
@@ -136,13 +140,13 @@ public class MessageServer {
             //log.debug("Too many requests"); Already logged below
             res.sendError(429, Trace.getAndClear().toString());
         }
-        public void onConsumed(RequestData requestData, Object rateLimiter) {
+        void onConsumed(RequestData requestData, Object rateLimiter) {
             consumption.incrementAndGet();
-            log.trace("Consumed {}", rateLimiter);
+            log.trace("Consumed {}, by rate limiter: {}", requestData, rateLimiter);
         }
-        public void onRejected(RequestData requestData, Object rateLimiter) {
+        void onRejected(RequestData requestData, Object rateLimiter) {
             rejection.incrementAndGet();
-            log.debug("Rejected {}", rateLimiter);
+            log.debug("Rejected {}, by rate limiter: {}", requestData, rateLimiter);
         }
         public long getRequests() {
             return requests.get();
@@ -177,6 +181,11 @@ public class MessageServer {
         private final RedisTemplate<String, Bandwidth> redisTemplate;
         public RedisBandwidthStore(RedisTemplate<String, Bandwidth> redisTemplate) {
             this.redisTemplate = redisTemplate;
+            final Runnable clearThreadLocals = () -> {
+                lastGottenKey.remove();
+                lastPutKey.remove();
+            };
+            Runtime.getRuntime().addShutdownHook(new Thread(clearThreadLocals));
         }
         public static String getLastGottenKey() {
             return lastGottenKey.get();
@@ -185,23 +194,19 @@ public class MessageServer {
             return lastPutKey.get();
         }
         @Override public Bandwidth get(String key) {
+            long startTime = System.currentTimeMillis();
             Bandwidth bandwidth = redisTemplate.opsForValue().get(key);
+            long endTime = System.currentTimeMillis();
             lastGottenKey.set(key);
-            log.trace("#get {} = {}", key, bandwidth);
+            log.trace("#get in {} millis, {} = {}", (endTime - startTime), key, bandwidth);
             return bandwidth;
         }
         @Override public void put(String key, Bandwidth bandwidth) {
+            long startTime = System.currentTimeMillis();
             redisTemplate.opsForValue().set(key, bandwidth);
+            long endTime = System.currentTimeMillis();
             lastPutKey.set(key);
-            log.trace("#put {} = {}", key, bandwidth);
-        }
-
-        private String removePrefix(String text, String prefixToRemove) {
-            if (text.startsWith(prefixToRemove)) {
-                text = text.substring(prefixToRemove.length());
-            }
-            return text;
+            log.trace("#put in {} millis, {} = {}", (endTime - startTime), key, bandwidth);
         }
     }
-
 }

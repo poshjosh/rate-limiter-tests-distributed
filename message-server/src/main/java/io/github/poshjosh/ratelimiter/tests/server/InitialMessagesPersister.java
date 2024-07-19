@@ -1,5 +1,7 @@
 package io.github.poshjosh.ratelimiter.tests.server;
 
+import io.github.poshjosh.ratelimiter.tests.server.model.Message;
+import io.github.poshjosh.ratelimiter.tests.server.services.MessageService;
 import org.springframework.boot.CommandLineRunner;
 
 public class InitialMessagesPersister implements CommandLineRunner {
