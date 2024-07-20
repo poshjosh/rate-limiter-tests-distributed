@@ -2,6 +2,7 @@ package io.github.poshjosh.ratelimiter.tests.client.tests;
 
 import io.github.poshjosh.ratelimiter.tests.client.model.Message;
 import io.github.poshjosh.ratelimiter.tests.client.Rest;
+import io.github.poshjosh.ratelimiter.tests.client.exception.TestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -51,7 +52,7 @@ public abstract class AbstractTests {
     public String run() {
         log.info("#run()");
         if (isInProgress()) {
-            throw new IllegalStateException("In progress");
+            throw TestException.alreadyRunning();
         }
         try {
             setInProgress(true);

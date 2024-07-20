@@ -1,5 +1,7 @@
 package io.github.poshjosh.ratelimiter.tests.client.tests.performance;
 
+import io.github.poshjosh.ratelimiter.tests.client.RandomHeaders;
+import io.github.poshjosh.ratelimiter.tests.client.exception.TestException;
 import io.github.poshjosh.ratelimiter.tests.client.tests.AbstractTests;
 import io.github.poshjosh.ratelimiter.tests.client.resources.ResourcePaths;
 import io.github.poshjosh.ratelimiter.tests.client.Rest;
@@ -11,7 +13,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 
 import java.math.BigDecimal;
-import java.net.URI;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Supplier;
@@ -20,8 +21,7 @@ import java.util.stream.Collectors;
 public class PerformanceTests extends AbstractTests implements TestProcess {
 
     private static final Logger log = LoggerFactory.getLogger(PerformanceTests.class);
-
-    private final BigDecimal ONE_THOUSAND = BigDecimal.valueOf(1000);
+    private static final BigDecimal ONE_THOUSAND = BigDecimal.valueOf(1000);
     private long startTime;
 
     private final PerformanceTestsResultHandler resultHandler;
@@ -30,20 +30,30 @@ public class PerformanceTests extends AbstractTests implements TestProcess {
 
     private final ExecutorService executorService;
 
+    private final boolean randomizeRequests;
+
     private int totalDurationSeconds;
 
+    private static Rest withInterceptor(Rest rest, boolean randomizeRequests) {
+        if (!randomizeRequests) {
+            return rest;
+        }
+        return rest.withInterceptor((request, body, execution) -> {
+            RandomHeaders.randomize(request.getHeaders());
+            return execution.execute(request, body);
+        });
+    }
+
     public PerformanceTests(
-            URI baseUri, PerformanceTestData performanceTestData,
-            PerformanceTestsResultHandler resultHandler) {
-        super(new Rest(uri(baseUri, performanceTestData).toString()));
+            Rest rest,
+            PerformanceTestData performanceTestData,
+            PerformanceTestsResultHandler resultHandler,
+            boolean randomizeRequests) {
+        super(withInterceptor(rest, randomizeRequests));
         this.performanceTestData = Objects.requireNonNull(performanceTestData);
         this.resultHandler = resultHandler;
         this.executorService = Executors.newCachedThreadPool();
-    }
-
-    private static URI uri(URI baseUri, PerformanceTestData performanceTestData) {
-        return ResourcePaths.performanceTestUri(baseUri, performanceTestData.getLimit(),
-                performanceTestData.getTimeout(), performanceTestData.getWork());
+        this.randomizeRequests = randomizeRequests;
     }
 
     protected String doRun() {
@@ -67,8 +77,7 @@ public class PerformanceTests extends AbstractTests implements TestProcess {
             executorService.shutdown();
             executorService.awaitTermination(totalDurationSeconds, TimeUnit.SECONDS);
         }catch(InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
+            onInterrupted(e);
         } finally{
             log.info("Waited {} seconds for {} results", totalDurationSeconds, resultBuffer.size());
             executorService.shutdownNow();
@@ -139,7 +148,9 @@ public class PerformanceTests extends AbstractTests implements TestProcess {
             BigDecimal memory = MathUtil.ZERO;
             try {
                 ResponseEntity<Object> responseEntity = sendGetUsageRequest(MathUtil.ZERO);
-                cookies.addAll(getCookies(responseEntity));
+                if (!this.randomizeRequests) {
+                    cookies.addAll(getCookies(responseEntity));
+                }
                 updateStats(responseEntity, 200);
                 Object body = responseEntity.getBody();
                 memory = MathUtil.toBigDecimal(body);
@@ -170,8 +181,9 @@ public class PerformanceTests extends AbstractTests implements TestProcess {
     }
 
     private void onInterrupted(InterruptedException e) {
+        log.error("Interrupted while waiting for tests to complete", e);
         Thread.currentThread().interrupt();
-        throw new RuntimeException(e);
+        throw TestException.interrupted();
     }
 
     private ResponseEntity<Object> sendGetUsageRequest(Object bodyIfNone) {

@@ -13,6 +13,7 @@ services:
     # if there are one or more writes
     command: redis-server --save 20 1 --loglevel debug
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - redis-cache:/data
   
   message-server:
@@ -42,6 +43,10 @@ services:
       SPRING_CACHE_TYPE: "${SPRING_CACHE_TYPE:-redis}"
       SPRING_CACHE_REDIS_CACHE_NULL_VALUES: "${SPRING_CACHE_REDIS_CACHE_NULL_VALUES:-false}"
       APP_RATE_LIMIT_MODE: "${APP_RATE_LIMIT_MODE:-auto}"
+      APP_OUTPUT_DIR: "${APP_OUTPUT_DIR:-/output/1}"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - "~/.rate-limiter${APP_OUTPUT_DIR:-/output/1}:${APP_OUTPUT_DIR:-/output/1}"
 
   nginx:
     image: nginx:latest
@@ -52,8 +57,12 @@ services:
     restart: unless-stopped
     depends_on:
       - message-server
+    env_file:
+      - .env
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - "~/.rate-limiter${APP_OUTPUT_DIR:-/output/1}/logs:/logs"
 
   message-client:
     build:
@@ -71,9 +80,10 @@ services:
       SERVER_PORT: 3333
       APP_MESSAGE_SERVER_URL: http://nginx:4444
       APP_RATE_LIMIT_MODE: "${APP_RATE_LIMIT_MODE:-auto}"
-      APP_OUTPUT_DIR: "${APP_OUTPUT_DIR:-/logs/tests/performance/1}"
+      APP_OUTPUT_DIR: "${APP_OUTPUT_DIR:-/output/1}"
     volumes:
-      - "~/.rate-limiter${APP_OUTPUT_DIR:-/logs/tests/performance}:${APP_OUTPUT_DIR:-/logs/tests/performance}"
+      - /etc/localtime:/etc/localtime:ro
+      - "~/.rate-limiter${APP_OUTPUT_DIR:-/output/1}:${APP_OUTPUT_DIR:-/output/1}"
 
 networks:
   message-network:

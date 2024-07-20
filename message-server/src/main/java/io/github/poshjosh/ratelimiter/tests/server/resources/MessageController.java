@@ -3,7 +3,7 @@ package io.github.poshjosh.ratelimiter.tests.server.resources;
 import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.tests.server.model.Message;
 import io.github.poshjosh.ratelimiter.tests.server.services.MessageService;
-import io.github.poshjosh.ratelimiter.tests.server.util.Trace;
+import io.github.poshjosh.ratelimiter.tests.server.util.logging.LogMessages;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -32,7 +32,7 @@ public class MessageController {
         log.debug("#postMessage({})", message);
         message = messageService.addMessage(message);
         return ResponseEntity.created(URI.create(path + "/" + message.getId()))
-                .body(Trace.addGetAndClear(message));
+                .body(LogMessages.addGetAndClear(message));
     }
 
     @GetMapping(path + "/count")
@@ -57,7 +57,7 @@ public class MessageController {
         log.debug("#getMessages()");
         List<Message> messages = new ArrayList<>();
         messages.addAll(messageService.getMessages());
-        messages.addAll(Trace.getAndClear());
+        messages.addAll(LogMessages.getAndClear());
         return messages;
     }
 

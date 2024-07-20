@@ -6,8 +6,6 @@ import org.springframework.core.env.Environment;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 public final class EnvLogger {
 
@@ -25,7 +23,7 @@ public final class EnvLogger {
         if (contextPath == null || contextPath.isEmpty()) {
             contextPath = "/";
         }
-        String hostAddress = getHostAddress();
+        String hostAddress = HostAddress.get();
         int mb = 1024 * 1024;
         MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
         long xmx = memoryBean.getHeapMemoryUsage().getMax() / mb;
@@ -46,19 +44,5 @@ public final class EnvLogger {
                 contextPath,
                 xms, xmx,
                 env.getActiveProfiles());
-    }
-
-    private static String hostAddress;
-    private static String getHostAddress() {
-        if (hostAddress != null) {
-            return hostAddress;
-        }
-        try {
-            hostAddress = InetAddress.getLocalHost().getHostAddress();
-        } catch (UnknownHostException e) {
-            log.warn("The host name could not be determined, using `localhost` as fallback");
-            hostAddress = "localhost";
-        }
-        return hostAddress;
     }
 }

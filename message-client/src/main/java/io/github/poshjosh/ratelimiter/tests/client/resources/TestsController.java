@@ -1,5 +1,6 @@
 package io.github.poshjosh.ratelimiter.tests.client.resources;
 
+import io.github.poshjosh.ratelimiter.tests.client.exception.TestException;
 import io.github.poshjosh.ratelimiter.tests.client.services.TestsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +21,10 @@ public class TestsController {
     @GetMapping(ResourcePaths.TESTS_PATH)
     public String tests() {
         log.debug("#tests()");
-        return testsService.tests();
+        try {
+            return testsService.tests();
+        } catch (TestException e) {
+            return e.getLocalizedMessage();
+        }
     }
 }

@@ -1,7 +1,7 @@
 package io.github.poshjosh.ratelimiter.tests.server;
 
 import io.github.poshjosh.ratelimiter.tests.server.services.MessageService;
-import io.github.poshjosh.ratelimiter.tests.server.util.Trace;
+import io.github.poshjosh.ratelimiter.tests.server.util.logging.LogMessages;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -37,6 +37,6 @@ public class MessageServerExceptionHandler extends ResponseEntityExceptionHandle
         if (log.isWarnEnabled()) {
             log.warn(ex.toString());
         }
-        return handleExceptionInternal(ex, Trace.getAndClear(), new HttpHeaders(), status, req);
+        return handleExceptionInternal(ex, LogMessages.getAndClear(), new HttpHeaders(), status, req);
     }
 }

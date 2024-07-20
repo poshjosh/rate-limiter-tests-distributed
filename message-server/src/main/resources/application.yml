@@ -1,5 +1,5 @@
 rate-limiter:
-  resource-packages: io.github.poshjosh.ratelimiter.tests.server
+  resource-packages: io.github.poshjosh.ratelimiter.tests.server.resources
 
 spring:
   application:
@@ -17,6 +17,7 @@ server:
 
 app:
   rate-limit-mode: auto
+  output-dir: /.rate-limiter/output
 
 debug: false
 

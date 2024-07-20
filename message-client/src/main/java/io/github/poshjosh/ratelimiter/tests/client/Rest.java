@@ -5,14 +5,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.*;
 import java.util.function.Function;
 
 @Component
@@ -35,15 +35,15 @@ public class Rest {
 
     public <T> ResponseEntity<T> get(String path, Class<T> resultType,
             Function<RestClientException, T> onError) {
-        return doGet(createEndpoint(path), resultType, onError);
+        return doGet(path, resultType, onError);
     }
 
-    private <T> ResponseEntity<T> doGet(URI uri, Class<T> resultType,
+    private <T> ResponseEntity<T> doGet(String path, Class<T> resultType,
             Function<RestClientException, T> onError) {
         try {
-            return restTemplate.getForEntity(uri, resultType);
+            return sendRequest(path, HttpMethod.GET, null, new HttpHeaders(), null, resultType, null);
         } catch(RestClientException e) {
-            log.warn("Error accessing: " + uri, e);
+            log.warn("Error accessing: " + path, e);
             return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(onError.apply(e));
         }
     }
@@ -65,8 +65,6 @@ public class Rest {
             response = ResponseEntity.status(e.getStatusCode())
                     .headers(e.getResponseHeaders())
                     .body(CharSequence.class.isAssignableFrom(responseType) ? (T)e.getResponseBodyAsString() : bodyIfNone);
-        } catch (RestClientException e) {
-            throw e;
         }
         T responseBody = response.getBody();
         if (responseBody == null || responseBody.toString().isEmpty()) {
@@ -75,5 +73,11 @@ public class Rest {
                     .body(bodyIfNone);
         }
         return response;
+    }
+
+    public Rest withInterceptor(ClientHttpRequestInterceptor interceptor) {
+        Rest rest = new Rest(remoteServerUrl);
+        rest.restTemplate.getInterceptors().add(interceptor);
+        return rest;
     }
 }

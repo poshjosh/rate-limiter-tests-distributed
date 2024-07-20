@@ -1,7 +1,7 @@
 package io.github.poshjosh.ratelimiter.tests.server.resources;
 
 import io.github.poshjosh.ratelimiter.tests.server.model.Message;
-import io.github.poshjosh.ratelimiter.tests.server.util.Trace;
+import io.github.poshjosh.ratelimiter.tests.server.util.logging.LogMessages;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.servlet.error.ErrorController;
@@ -26,7 +26,7 @@ public class HomeController implements ErrorController {
         if (log.isWarnEnabled()) {
             log.warn(sval);
         }
-        return Trace.getAndClear();
+        return LogMessages.getAndClear();
     }
 
     @GetMapping

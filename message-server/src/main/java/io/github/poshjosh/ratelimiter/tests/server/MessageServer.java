@@ -5,7 +5,8 @@ import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
 import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
 import io.github.poshjosh.ratelimiter.tests.server.model.RateLimitMode;
 import io.github.poshjosh.ratelimiter.tests.server.services.MessageService;
-import io.github.poshjosh.ratelimiter.tests.server.util.Trace;
+import io.github.poshjosh.ratelimiter.tests.server.util.logging.LogMessages;
+import io.github.poshjosh.ratelimiter.tests.server.util.logging.LogMessageCollector;
 import io.github.poshjosh.ratelimiter.tests.server.util.EnvLogger;
 import io.github.poshjosh.ratelimiter.util.RateLimitProperties;
 import io.github.poshjosh.ratelimiter.web.core.WebRateLimiterContext;
@@ -49,7 +50,7 @@ public class MessageServer {
 
     public static void main(String[] args) {
         EnvLogger.log(SpringApplication.run(MessageServer.class, args).getEnvironment());
-        Trace.init(); // Must be initialized after spring application startup
+        LogMessageCollector.init(); // Must be initialized after spring application startup
     }
 
     @Bean
@@ -138,7 +139,7 @@ public class MessageServer {
                 HttpServletRequest req, HttpServletResponse res, FilterChain chain)
                 throws IOException {
             //log.debug("Too many requests"); Already logged below
-            res.sendError(429, Trace.getAndClear().toString());
+            res.sendError(429, LogMessages.getAndClear().toString());
         }
         void onConsumed(RequestData requestData, Object rateLimiter) {
             consumption.incrementAndGet();

@@ -1,6 +1,7 @@
 package io.github.poshjosh.ratelimiter.tests.client.tests;
 
 import io.github.poshjosh.ratelimiter.tests.client.Rest;
+import io.github.poshjosh.ratelimiter.tests.client.exception.TestException;
 import io.github.poshjosh.ratelimiter.tests.client.resources.ResourcePaths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +38,7 @@ public class Tests extends AbstractTests {
             ResponseEntity<Object> response = getLastPutToCache();
             Object lastPutToCache = response == null ? null : response.getBody();
             if (lastPutToCache == null || lastPutToCache instanceof Throwable) {
-                throw new RuntimeException("Cache may not be working as expected");
+                throw TestException.cacheProblem();
             }
         }
 

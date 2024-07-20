@@ -19,7 +19,7 @@ public final class FileUtil {
 
 //    public static void main(String... args) {
 //        final Path path = java.nio.file.Paths.get(System.getProperty("user.home") +
-//                        "/Library/Application Support/JetBrains/IntelliJIdea2022.3/scratches/logs/tests/performance/4/0_auto-25-timeout-0-steady_1-work-50-percent-100-iterations-1-user-duration-20-A.csv")
+//                        "/Library/Application Support/JetBrains/IntelliJIdea2022.3/scratches/output/4/0_auto-25-timeout-0-steady_1-work-50-percent-100-iterations-1-user-duration-20-A.csv")
 //                .toAbsolutePath().normalize();
 //        System.out.println("          File: " + path);
 //        if (Files.exists(path)) {

@@ -1,5 +1,6 @@
 package io.github.poshjosh.ratelimiter.tests.client.resources;
 
+import io.github.poshjosh.ratelimiter.tests.client.exception.TestException;
 import io.github.poshjosh.ratelimiter.tests.client.tests.performance.PerformanceTestData;
 import io.github.poshjosh.ratelimiter.tests.client.services.PerformanceTestsService;
 import org.slf4j.Logger;
@@ -24,6 +25,10 @@ public class PerformanceTestsController {
             produces = "text/html;charset=UTF-8")
     public String performanceTests(PerformanceTestData performanceTestData) {
         log.debug("#performanceTests({})", performanceTestData);
-        return performanceTestsService.runPerformanceTests(performanceTestData);
+        try {
+            return performanceTestsService.runPerformanceTests(performanceTestData);
+        } catch (TestException e) {
+            return e.getLocalizedMessage();
+        }
     }
 }

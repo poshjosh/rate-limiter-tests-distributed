@@ -9,7 +9,7 @@ app:
   message-server:
     url: http://localhost:5555
   rate-limit-mode: auto
-  output-dir: /.rate-limiter/logs/tests
+  output-dir: /.rate-limiter/output
 
 debug: false
 
