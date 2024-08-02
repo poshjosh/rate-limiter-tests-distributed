@@ -121,7 +121,7 @@ public class MessageServer {
         }
         @Override
         protected boolean tryConsume(HttpServletRequest request) {
-            final RateLimiter rateLimiter = getRateLimiterFactory().getRateLimiter(request);
+            final RateLimiter rateLimiter = getRateLimiter(request);
             final boolean success = rateLimiter.tryAcquire(getTimeout(request), TimeUnit.SECONDS);
             final RequestData requestData = new RequestData(request);
             onConsumed(requestData, rateLimiter);

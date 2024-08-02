@@ -27,7 +27,7 @@ public class MessageController {
     }
 
     @PostMapping(path)
-    @Rate(permits=1, timeUnit=TimeUnit.MINUTES, when="web.session.id!=")
+    @Rate(permits=1, timeUnit=TimeUnit.MINUTES, when="web.session.id !=")
     public ResponseEntity<List<Message>> postMessage(@RequestBody Message message) {
         log.debug("#postMessage({})", message);
         message = messageService.addMessage(message);
@@ -43,7 +43,7 @@ public class MessageController {
     }
 
     @GetMapping(path + "/{id}")
-    @Rate(permits=1, timeUnit=TimeUnit.MINUTES, when="web.session.id!=")
+    @Rate(permits=1, timeUnit=TimeUnit.MINUTES, when="web.session.id !=")
     public ResponseEntity<Message> getMessage(@PathVariable("id") Long id) {
         log.debug("#getMessage({})", id);
         return messageService.getMessage(id)
@@ -52,7 +52,7 @@ public class MessageController {
     }
 
     @GetMapping(path)
-    @Rate(permits=1, timeUnit=TimeUnit.MINUTES, when="web.request.header={X-SAMPLE-TRIGGER=true}")
+    @Rate(permits=1, timeUnit=TimeUnit.MINUTES, when="web.request.header = {X-SAMPLE-TRIGGER = true}")
     public List<Message> getMessages() {
         log.debug("#getMessages()");
         List<Message> messages = new ArrayList<>();

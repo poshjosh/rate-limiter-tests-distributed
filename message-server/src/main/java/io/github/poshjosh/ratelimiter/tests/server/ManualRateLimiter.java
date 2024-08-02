@@ -1,7 +1,9 @@
 package io.github.poshjosh.ratelimiter.tests.server;
 
 import io.github.poshjosh.ratelimiter.RateLimiter;
+import io.github.poshjosh.ratelimiter.RateLimiters;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
+import io.github.poshjosh.ratelimiter.bandwidths.Bandwidths;
 import io.github.poshjosh.ratelimiter.tests.server.resources.UsageController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +31,7 @@ public class ManualRateLimiter {
         }
         if (delegate == null) {
             final int permitsPerSec = getRateSeconds(uri);
-            delegate = permitsPerSec > 0 ? RateLimiter.of(Bandwidth.allOrNothing(permitsPerSec)) : RateLimiter.NO_LIMIT;
+            delegate = permitsPerSec > 0 ? RateLimiters.of(Bandwidths.allOrNothing(permitsPerSec)) : RateLimiters.NO_LIMIT;
             log.info("Completed setup of manual rate limiting at {} permits per second", permitsPerSec);
         }
         final int timeout = getTimeout(request);
@@ -45,7 +47,7 @@ public class ManualRateLimiter {
     }
     public @Nullable Bandwidth getBandwidth() {
         try {
-            return delegate == null ? Bandwidth.UNLIMITED : delegate.getBandwidth();
+            return delegate == null ? Bandwidths.UNLIMITED : delegate.getBandwidth();
         } catch(Exception e) {
             return null;
         }
