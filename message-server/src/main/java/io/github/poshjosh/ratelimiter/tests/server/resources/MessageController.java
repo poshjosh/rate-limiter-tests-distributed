@@ -52,7 +52,7 @@ public class MessageController {
     }
 
     @GetMapping(path)
-    @Rate(permits=1, timeUnit=TimeUnit.MINUTES, when="web.request.header = {X-SAMPLE-TRIGGER = true}")
+    @Rate(permits=1, timeUnit=TimeUnit.MINUTES, when="web.request.header[X-SAMPLE-TRIGGER] = true")
     public List<Message> getMessages() {
         log.debug("#getMessages()");
         List<Message> messages = new ArrayList<>();
