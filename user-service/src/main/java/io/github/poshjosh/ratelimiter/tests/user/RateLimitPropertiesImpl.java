@@ -7,7 +7,6 @@ import io.github.poshjosh.ratelimiter.util.RateLimitProperties;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 @javax.inject.Singleton
 public class RateLimitPropertiesImpl implements RateLimitProperties {
@@ -20,13 +19,13 @@ public class RateLimitPropertiesImpl implements RateLimitProperties {
 
     private final Boolean disabled;
 
-    private final Map<String, Rates> rateLimitConfigs;
+    private final List<Rates> rates;
 
     public RateLimitPropertiesImpl() {
         this.applicationPath = UserService.APPLICATION_PATH;
         this.resourcePackages = Collections.singletonList(UserResource.class.getPackage().getName());
         this.disabled = Boolean.FALSE;
-        this.rateLimitConfigs = Collections.singletonMap(DEFAULT_CONFIG_NAME, getRateLimitConfigList());
+        this.rates = Collections.singletonList(createRates());
     }
 
     @Override public String getApplicationPath() {
@@ -48,15 +47,15 @@ public class RateLimitPropertiesImpl implements RateLimitProperties {
     }
 
     @Override
-    public Map<String, Rates> getRateLimitConfigs() {
-        return rateLimitConfigs;
+    public List<Rates> getRates() {
+        return rates;
     }
 
-    private Rates getRateLimitConfigList() {
-        return Rates.of(getRateLimit());
+    private Rates createRates() {
+        return Rates.of(DEFAULT_CONFIG_NAME, createRate());
     }
 
-    private Rate getRateLimit() {
+    private Rate createRate() {
         return Rate.of(2, Duration.ofMinutes(1));
     }
 
@@ -67,7 +66,7 @@ public class RateLimitPropertiesImpl implements RateLimitProperties {
                 ", resourceClasses=" + getResourceClasses() +
                 ", resourcePackages=" + resourcePackages +
                 ", disabled=" + disabled +
-                ", rateLimitConfigs=" + rateLimitConfigs +
+                ", rates=" + rates +
                 '}';
     }
 }

@@ -24,20 +24,20 @@ public class CacheController {
     }
 
     @GetMapping("/last/gotten")
-    @Rate(100)
+    @Rate("100/s")
     public Object getLastGotten() {
         return getValueFromCache(MessageServer.RedisBandwidthStore.getLastGottenKey());
     }
 
     @GetMapping("/last/put")
-    @Rate(100)
+    @Rate("100/s")
     public Object getLastPut() {
         final String lastPutKey = MessageServer.RedisBandwidthStore.getLastPutKey();
         return lastPutKey == null ? null : getValueFromCache(lastPutKey);
     }
 
     @GetMapping("/last-key/put")
-    @Rate(100)
+    @Rate("100/s")
     public String getLastPutKey() {
         return MessageServer.RedisBandwidthStore.getLastPutKey();
     }
