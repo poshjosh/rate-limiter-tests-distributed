@@ -1,6 +1,6 @@
 package io.github.poshjosh.ratelimiter.tests.server.services;
 
-import io.github.poshjosh.ratelimiter.tests.server.MessageServer;
+import io.github.poshjosh.ratelimiter.tests.server.MessageServerApplication;
 import io.github.poshjosh.ratelimiter.tests.server.model.RateLimitMode;
 import io.github.poshjosh.ratelimiter.tests.server.model.Usage;
 import io.github.poshjosh.ratelimiter.tests.server.UsageRecorder;
@@ -17,12 +17,12 @@ import java.util.Map;
 @Service
 public class UsageService {
     private static final BigDecimal ONE_MILLION = new BigDecimal(1_000_000); // Could also be 1024 * 1024
-    private final MessageServer.RateLimitingFilterImpl rateLimitingFilter;
+    private final MessageServerApplication.RateLimitingFilterImpl rateLimitingFilter;
     private final UsageRecorder usageRecorder;
     private final RateLimitMode rateLimitMode;
 
     public UsageService(
-            MessageServer.RateLimitingFilterImpl rateLimitingFilter,
+            MessageServerApplication.RateLimitingFilterImpl rateLimitingFilter,
             UsageRecorder usageRecorder,
             @Value("${app.rate-limit-mode}") String rateLimitModeString) {
         this.rateLimitingFilter = rateLimitingFilter;

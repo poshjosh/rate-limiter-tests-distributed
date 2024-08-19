@@ -5,8 +5,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class MessageClient {
+public class MessageClientApplication {
     public static void main(String[] args) {
-        EnvLogger.log(SpringApplication.run(MessageClient.class, args).getEnvironment());
+        EnvLogger.log(SpringApplication.run(MessageClientApplication.class, args).getEnvironment());
     }
 }

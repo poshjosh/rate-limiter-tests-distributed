@@ -22,7 +22,7 @@ public class RateLimitPropertiesImpl implements RateLimitProperties {
     private final List<Rates> rates;
 
     public RateLimitPropertiesImpl() {
-        this.applicationPath = UserService.APPLICATION_PATH;
+        this.applicationPath = UserServiceApplication.APPLICATION_PATH;
         this.resourcePackages = Collections.singletonList(UserResource.class.getPackage().getName());
         this.disabled = Boolean.FALSE;
         this.rates = Collections.singletonList(createRates());

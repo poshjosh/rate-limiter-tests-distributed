@@ -45,7 +45,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring.boot.starter.version}</version>
                 <configuration>
-                    <mainClass>io.github.poshjosh.ratelimiter.tests.client.MessageClient</mainClass>
+                    <mainClass>io.github.poshjosh.ratelimiter.tests.client.MessageClientApplication</mainClass>
                     <layout>JAR</layout>
                 </configuration>
                 <executions>

@@ -44,12 +44,12 @@ import java.util.concurrent.atomic.AtomicLong;
 @EnableCaching
 @EnableScheduling
 @SpringBootApplication
-@EnableConfigurationProperties(MessageServer.RateLimitPropertiesImpl.class)
-public class MessageServer {
-    private static final Logger log = LoggerFactory.getLogger(MessageServer.class);
+@EnableConfigurationProperties(MessageServerApplication.RateLimitPropertiesImpl.class)
+public class MessageServerApplication {
+    private static final Logger log = LoggerFactory.getLogger(MessageServerApplication.class);
 
     public static void main(String[] args) {
-        EnvLogger.log(SpringApplication.run(MessageServer.class, args).getEnvironment());
+        EnvLogger.log(SpringApplication.run(MessageServerApplication.class, args).getEnvironment());
         LogMessageCollector.init(); // Must be initialized after spring application startup
     }
 

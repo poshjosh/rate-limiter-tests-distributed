@@ -63,7 +63,7 @@ public class RandomUserAgents {
             final int index = random.nextInt(BOT_USER_AGENTS.length);
             return BOT_USER_AGENTS[index];
         }
-        return "RateLimiterTests/1.0 (Macintosh; Intel Mac OS X 10_15_7) MessageClient/"
+        return "RateLimiterTests/1.0 (Macintosh; Intel Mac OS X 10_15_7) MessageClientApplication/"
                 + UUID.nameUUIDFromBytes(remoteAddress.getBytes());
     }
 
