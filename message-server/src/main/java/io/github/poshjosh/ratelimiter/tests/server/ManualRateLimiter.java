@@ -2,12 +2,10 @@ package io.github.poshjosh.ratelimiter.tests.server;
 
 import io.github.poshjosh.ratelimiter.RateLimiter;
 import io.github.poshjosh.ratelimiter.RateLimiters;
-import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidths;
 import io.github.poshjosh.ratelimiter.tests.server.resources.UsageController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import javax.servlet.ServletRequest;
@@ -18,8 +16,9 @@ import java.util.concurrent.TimeUnit;
 public class ManualRateLimiter {
     private static final Logger log = LoggerFactory.getLogger(ManualRateLimiter.class);
     private RateLimiter delegate;
-    public boolean tryConsume(ServletRequest request) {
-        final String uri = ((HttpServletRequest)request).getRequestURI();
+
+    public boolean tryConsume(HttpServletRequest request) {
+        final String uri = request.getRequestURI();
         // Our rate limited endpoints are of format /limited/[DIGITS]
         // The digits are at the end
         // Since we dynamically initialize our manual rate limiter,
@@ -45,15 +44,8 @@ public class ManualRateLimiter {
         final String timeoutStr = request.getParameter("timeout");
         return StringUtils.hasText(timeoutStr) ? Integer.parseInt(timeoutStr) : 0;
     }
-    public @Nullable Bandwidth getBandwidth() {
-        try {
-            return delegate == null ? Bandwidths.UNLIMITED : delegate.getBandwidth();
-        } catch(Exception e) {
-            return null;
-        }
-    }
 
     @Override public String toString() {
-        return "ManualRateLimiter{" + "delegate=" + delegate + '}';
+        return "ManualRateLimiter{delegate=" + delegate + '}';
     }
 }

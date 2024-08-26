@@ -7,8 +7,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
@@ -35,16 +35,36 @@ public class Rest {
 
     public <T> ResponseEntity<T> get(String path, Class<T> resultType,
             Function<RestClientException, T> onError) {
-        return doGet(path, resultType, onError);
+        return get(path, resultType, onError, null);
+    }
+
+    public <T> ResponseEntity<T> get(String path, Class<T> resultType,
+            Function<RestClientException, T> onError, T bodyIfNone) {
+        return doGet(path, resultType, onError, bodyIfNone);
+    }
+
+    public ResponseEntity<Object> delete(String path, Function<RestClientException, Object> onError) {
+        return doDelete(path, onError);
     }
 
     private <T> ResponseEntity<T> doGet(String path, Class<T> resultType,
-            Function<RestClientException, T> onError) {
+            Function<RestClientException, T> onError, T bodyIfNone) {
         try {
-            return sendRequest(path, HttpMethod.GET, null, new HttpHeaders(), null, resultType, null);
-        } catch(RestClientException e) {
-            log.warn("Error accessing: " + path, e);
-            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(onError.apply(e));
+            return sendRequest(path, HttpMethod.GET, null, new HttpHeaders(), null, resultType, bodyIfNone);
+        } catch(RestClientResponseException e) {
+            log.warn("Error executing: GET " + path, e);
+            return ResponseEntity.status(e.getRawStatusCode())
+                    .headers(e.getResponseHeaders()).body(onError.apply(e));
+        }
+    }
+
+    private ResponseEntity<Object> doDelete(String path, Function<RestClientException, Object> onError) {
+        try {
+            return sendRequest(path, HttpMethod.DELETE, null, new HttpHeaders(), null, Object.class, null);
+        } catch(RestClientResponseException e) {
+            log.warn("Error executing: DELETE " + path, e);
+            return ResponseEntity.status(e.getRawStatusCode())
+                    .headers(e.getResponseHeaders()).body(onError.apply(e));
         }
     }
 
@@ -57,14 +77,11 @@ public class Rest {
         HttpEntity<Message> entity = new HttpEntity<>(requestBody, headers);
         final URI uri = createEndpoint(path);
         log.debug("{} {}, with cookies: {}", method, uri, cookies);
-        ResponseEntity<T> response;
-        try {
-            response = restTemplate.exchange(uri, method, entity, responseType);
-        } catch(HttpStatusCodeException e) {
-            log.warn(e.toString());
-            response = ResponseEntity.status(e.getStatusCode())
-                    .headers(e.getResponseHeaders())
-                    .body(CharSequence.class.isAssignableFrom(responseType) ? (T)e.getResponseBodyAsString() : bodyIfNone);
+        ResponseEntity<T> response = restTemplate.exchange(uri, method, entity, responseType);
+        log.debug("Response status: {}", response.getStatusCode());
+        if (log.isTraceEnabled()) {
+            log.trace("Response headers: {}", response.getHeaders());
+            log.trace("Response body: {}", response.getBody());
         }
         T responseBody = response.getBody();
         if (responseBody == null || responseBody.toString().isEmpty()) {

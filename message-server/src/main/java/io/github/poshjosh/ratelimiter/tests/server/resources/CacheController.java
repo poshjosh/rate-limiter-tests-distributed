@@ -2,14 +2,14 @@ package io.github.poshjosh.ratelimiter.tests.server.resources;
 
 import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
-import io.github.poshjosh.ratelimiter.tests.server.MessageServerApplication;
+import io.github.poshjosh.ratelimiter.tests.server.redis.RedisBandwidthStore;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/caches")
 public class CacheController {
-    private final MessageServerApplication.RedisBandwidthStore store;
-    public CacheController(MessageServerApplication.RedisBandwidthStore store) {
+    private final RedisBandwidthStore store;
+    public CacheController(RedisBandwidthStore store) {
         this.store = store;
     }
 
@@ -26,20 +26,20 @@ public class CacheController {
     @GetMapping("/last/gotten")
     @Rate("100/s")
     public Object getLastGotten() {
-        return getValueFromCache(MessageServerApplication.RedisBandwidthStore.getLastGottenKey());
+        return getValueFromCache(RedisBandwidthStore.getLastGottenKey());
     }
 
     @GetMapping("/last/put")
     @Rate("100/s")
     public Object getLastPut() {
-        final String lastPutKey = MessageServerApplication.RedisBandwidthStore.getLastPutKey();
+        final String lastPutKey = RedisBandwidthStore.getLastPutKey();
         return lastPutKey == null ? null : getValueFromCache(lastPutKey);
     }
 
     @GetMapping("/last-key/put")
     @Rate("100/s")
     public String getLastPutKey() {
-        return MessageServerApplication.RedisBandwidthStore.getLastPutKey();
+        return RedisBandwidthStore.getLastPutKey();
     }
 
     private Bandwidth getValueFromCache(String key) {

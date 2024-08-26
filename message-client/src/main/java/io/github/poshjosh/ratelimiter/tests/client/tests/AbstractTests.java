@@ -7,8 +7,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -20,8 +22,11 @@ public abstract class AbstractTests {
     private static final Logger log = LoggerFactory.getLogger(AbstractTests.class);
 
     private static int postedMessageCount = 0;
+
+    // TODO - These counts are not properly implemented
     private static final AtomicInteger totalCount = new AtomicInteger();
     private static final AtomicInteger failureCount = new AtomicInteger();
+    private static final AtomicInteger rateLimitCount = new AtomicInteger();
     private static final AtomicBoolean inProgress = new AtomicBoolean();
     private final Rest rest;
 
@@ -58,9 +63,12 @@ public abstract class AbstractTests {
             setInProgress(true);
             totalCount.set(0);
             failureCount.set(0);
+            rateLimitCount.set(0);
             String message = doRun();
 
-            return message + "<p>Failures: " + failureCount.get() + " / " + totalCount.get() + "</p>" + output ;
+            return message + "<p>Failures: " + failureCount.get() + " / " + totalCount.get()
+                    + "</p>" + output + "<p>Failures excluding rate limit rejections: "
+                    + (failureCount.get() - rateLimitCount.get()) + " / " + totalCount.get() + "</p>";
         } finally {
             setInProgress(false);
         }
@@ -75,13 +83,22 @@ public abstract class AbstractTests {
             HttpHeaders headers, Message requestBody, Class<T> responseType, T bodyIfNone) {
         try {
             totalCount.incrementAndGet();
-            ResponseEntity<T> response = rest.sendRequest(
+            return rest.sendRequest(
                     path, method, cookies, headers, requestBody, responseType, bodyIfNone);
-            log(response);
-            return response;
         } catch (RestClientException e) {
+            if (e instanceof RestClientResponseException) {
+                final RestClientResponseException re = (RestClientResponseException)e;
+                final int status = re.getRawStatusCode();
+                if (status == 429) {
+                    rateLimitCount.incrementAndGet();
+                }
+                return ResponseEntity.status(status)
+                        .headers(re.getResponseHeaders())
+                        .body(CharSequence.class.isAssignableFrom(responseType) ? (T)re.getResponseBodyAsString() : bodyIfNone);
+            }
             failureCount.incrementAndGet();
-            throw e;
+            log.warn("Error executing: {} {}, {}", method, path, e.toString());
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).build();
         }
     }
 
@@ -94,6 +111,9 @@ public abstract class AbstractTests {
         if (IntStream.of(expectedStatuses).anyMatch(expected -> expected == status)) {
             return true;
         } else {
+            if (status == 429) {
+                rateLimitCount.incrementAndGet();
+            }
             failureCount.incrementAndGet();
             return false;
         }
@@ -117,10 +137,6 @@ public abstract class AbstractTests {
         return message;
     }
 
-    protected void log(ResponseEntity responseEntity) {
-        log.debug("Response status: {}", responseEntity.getStatusCode());
-    }
-
     protected List<String> getCookies(ResponseEntity responseEntity) {
         List<String> cookies = responseEntity.getHeaders().get("Set-Cookie");
         return cookies == null ? Collections.emptyList() : cookies;
@@ -129,5 +145,9 @@ public abstract class AbstractTests {
     protected AbstractTests appendOutput(Object o) {
         output.append(o);
         return this;
+    }
+
+    public Rest getRest() {
+        return rest;
     }
 }

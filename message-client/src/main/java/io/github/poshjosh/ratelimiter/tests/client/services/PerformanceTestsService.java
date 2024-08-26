@@ -29,24 +29,30 @@ public class PerformanceTestsService {
 
     private final RateComputer rateComputer;
 
+    private final UsageService usageService;
+
     public PerformanceTestsService(
             @Value("${app.rate-limit-mode}") String rateLimitModeString,
             @Value("${app.output-dir}") String outputDir,
-            Rest rest, RateComputer rateComputer) {
+            Rest rest, RateComputer rateComputer,
+            UsageService usageService) {
         this.rateLimitMode = RateLimitMode.of(rateLimitModeString);
         this.outputDir = Paths.get(outputDir, "tests", "performance",
                 DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss").format(LocalDateTime.now()));
         this.rest = Objects.requireNonNull(rest);
         this.rateComputer = Objects.requireNonNull(rateComputer);
+        this.usageService = Objects.requireNonNull(usageService);
         log.debug("Rate limit mode: {}, output Dir: {}", this.rateLimitMode, this.outputDir);
     }
 
     public String runPerformanceTests(PerformanceTestData performanceTestData) {
+        usageService.clearUsageRecord();
         return new PerformanceTests(
                 createRest(performanceTestData),
                 performanceTestData,
                 createResultHandler(performanceTestData),
-                true).run();
+                true,
+                usageService).run();
     }
     private Rest createRest(PerformanceTestData performanceTestData) {
         final URI uri = ResourcePaths.performanceTestUri(

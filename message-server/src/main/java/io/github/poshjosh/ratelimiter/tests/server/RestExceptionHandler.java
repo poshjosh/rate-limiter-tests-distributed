@@ -9,13 +9,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 @ControllerAdvice
-public class MessageServerExceptionHandler extends ResponseEntityExceptionHandler {
+public class RestExceptionHandler extends ResponseEntityExceptionHandler {
 
-    private static final Logger log = LoggerFactory.getLogger(MessageServerExceptionHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(RestExceptionHandler.class);
 
     @ExceptionHandler(value = { MessageService.MessageException.class })
     protected ResponseEntity<Object> handleMessageException(
@@ -30,7 +32,15 @@ public class MessageServerExceptionHandler extends ResponseEntityExceptionHandle
 
     @ExceptionHandler(value = { Exception.class })
     protected ResponseEntity<Object> handleOtherExceptions(Exception ex, WebRequest request) {
-        return handleException(ex, request, HttpStatus.INTERNAL_SERVER_ERROR);
+        final HttpStatus status;
+        if (ex instanceof ResponseStatusException) {
+            status = ((ResponseStatusException) ex).getStatus();
+        } else if (ex instanceof RestClientResponseException) {
+            status = HttpStatus.valueOf(((RestClientResponseException) ex).getRawStatusCode());
+        } else {
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+        return handleException(ex, request, status);
     }
 
     private ResponseEntity<Object> handleException(Exception ex, WebRequest req, HttpStatus status) {

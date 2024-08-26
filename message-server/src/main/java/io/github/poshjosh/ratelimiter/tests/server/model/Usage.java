@@ -1,10 +1,11 @@
 package io.github.poshjosh.ratelimiter.tests.server.model;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Objects;
 
-public final class Usage {
+public final class Usage implements Serializable {
     public static Usage of(long duration, long memory) {
         return new Usage(duration, memory);
     }
@@ -25,8 +26,11 @@ public final class Usage {
     }
 
     private static final Runtime runtime = Runtime.getRuntime();
+    public static long maxMemory() {
+        return runtime.maxMemory();
+    }
     public static long availableMemory() {
-        final long max = runtime.maxMemory(); // Max heap VM can use e.g. Xmx setting
+        final long max = maxMemory(); // Max heap VM can use e.g. Xmx setting
         return max - usedMemory(); // available memory i.e. Maximum heap size minus the bookmark amount used
     }
     public static long usedMemory() {

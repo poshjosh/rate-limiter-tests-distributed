@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -16,6 +17,18 @@ public class UsageController {
 
     public UsageController(UsageService usageService) {
         this.usageService = usageService;
+    }
+
+    @DeleteMapping(ResourcePaths.USAGE_PATH)
+    public ResponseEntity<Object> clearUsageRecord() {
+        log.debug("#clearUsageRecord()");
+        return usageService.clearUsageRecord();
+    }
+
+    @GetMapping(ResourcePaths.USAGE_PATH)
+    public ResponseEntity<List> usage() {
+        log.debug("#usage()");
+        return usageService.usage();
     }
 
     @GetMapping(ResourcePaths.USAGE_SUMMARY_PATH)

@@ -5,16 +5,19 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 @Component
 public class RateComputer {
 
+    private final boolean strict = false;
+
     /**
      * Compute usage per each second.
      *
-     * Usage comprises of time and memory.
+     * <p>Usage comprises time and memory.</p>
      *
      * To make the computation start from zero, zero is assumed to be the first element.
      *
@@ -87,10 +90,7 @@ public class RateComputer {
                 updateLastWithAverageOf(result, repeated);
 
                 BigDecimal [] timeArr = new BigDecimal[timeDiff];
-                BigDecimal invertedTimeDiff = invert(timeDiff);
-                for(int j = 0; j < timeDiff; j++) {
-                    timeArr[j] = invertedTimeDiff;
-                }
+                Arrays.fill(timeArr, invert(timeDiff));
 
                 BigDecimal [] memoryArr = new BigDecimal[memoryDiff];
                 BigDecimal invertedMemoryDiff = invert(memoryDiff);
@@ -138,6 +138,9 @@ public class RateComputer {
         final int currTime = second.getTime().intValue();
         final int prevTime = first.getTime().intValue();
         if (currTime < prevTime) {
+            if (!strict) {
+                return 0;
+            }
             throw new IllegalArgumentException("Expecting sequentially increasing values but found ["
                     + index + "] = " + currTime + " to be less than [" + (index - 1) + "] = " + prevTime);
         }
@@ -145,8 +148,8 @@ public class RateComputer {
     }
 
     private int memoryDiff(Usage first, Usage second) {
-        final int currTime = second.getTime().intValue();
-        final int prevTime = first.getTime().intValue();
+        final int currTime = second.getMemory().intValue();
+        final int prevTime = first.getMemory().intValue();
         return Math.abs(currTime - prevTime);
     }
 

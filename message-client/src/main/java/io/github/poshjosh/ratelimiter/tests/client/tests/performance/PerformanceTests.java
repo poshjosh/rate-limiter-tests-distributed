@@ -2,8 +2,8 @@ package io.github.poshjosh.ratelimiter.tests.client.tests.performance;
 
 import io.github.poshjosh.ratelimiter.tests.client.RandomHeaders;
 import io.github.poshjosh.ratelimiter.tests.client.exception.TestException;
+import io.github.poshjosh.ratelimiter.tests.client.services.UsageService;
 import io.github.poshjosh.ratelimiter.tests.client.tests.AbstractTests;
-import io.github.poshjosh.ratelimiter.tests.client.resources.ResourcePaths;
 import io.github.poshjosh.ratelimiter.tests.client.Rest;
 import io.github.poshjosh.ratelimiter.tests.client.tests.performance.strategy.PerformanceTestStrategy;
 import io.github.poshjosh.ratelimiter.tests.client.tests.performance.strategy.TestProcess;
@@ -32,6 +32,8 @@ public class PerformanceTests extends AbstractTests implements TestProcess {
 
     private final boolean randomizeRequests;
 
+    private final UsageService usageService;
+
     private int totalDurationSeconds;
 
     private static Rest withInterceptor(Rest rest, boolean randomizeRequests) {
@@ -48,12 +50,14 @@ public class PerformanceTests extends AbstractTests implements TestProcess {
             Rest rest,
             PerformanceTestData performanceTestData,
             PerformanceTestsResultHandler resultHandler,
-            boolean randomizeRequests) {
+            boolean randomizeRequests,
+            UsageService usageService) {
         super(withInterceptor(rest, randomizeRequests));
         this.performanceTestData = Objects.requireNonNull(performanceTestData);
         this.resultHandler = resultHandler;
         this.executorService = Executors.newCachedThreadPool();
         this.randomizeRequests = randomizeRequests;
+        this.usageService = Objects.requireNonNull(usageService);
     }
 
     protected String doRun() {
@@ -67,7 +71,7 @@ public class PerformanceTests extends AbstractTests implements TestProcess {
         final int estResultSizePerIteration = 25_000;
         final int iterations = performanceTestData.getIterations();
 
-        List<Usage> resultBuffer = new ArrayList<>(iterations * estResultSizePerIteration);
+        List<Usage> resultBuffer = new ArrayList<>(10_000 * iterations * estResultSizePerIteration);
 
         for (int i = 0; i < iterations; i++) {
             startTests(String.valueOf(i + 1), resultBuffer);
@@ -83,31 +87,27 @@ public class PerformanceTests extends AbstractTests implements TestProcess {
             executorService.shutdownNow();
         }
 
-        List<?> usageRateResponse = sendGetRequest(
-                ResourcePaths.USAGE_PATH, List.class, Collections.emptyList()).getBody();
+        List<?> usageRateResponse = usageService.usage().getBody();
         List<Usage> usageRate = usageRateResponse.stream()
                 .map(oval -> (Map)oval)
-                .map(map -> new Usage(toBigDecimal(map, "amount"), toBigDecimal(map, "memory")))
+                .map(map -> new Usage(amount(map), memory(map)))
                 .collect(Collectors.toList());
 
         return resultHandler.process(statsBefore, resultBuffer, fetchStats(), usageRate);
     }
 
-    private BigDecimal toBigDecimal(Map data, String key) {
-        final Object oval = data.get(key);
-        switch(key) {
-            case "amount":
-                return MathUtil.toBigDecimal(oval);
-            case "memory":
-                Long lval = oval instanceof Long ? (Long)oval : Long.parseLong(oval.toString());
-                return MathUtil.toBigDecimal(String.valueOf(lval / (double)1_000_000));
-            default:
-                throw new IllegalArgumentException("Expected `amount`  or `memory`, found: `" + key + "`");
-        }
+    private BigDecimal amount(Map map) {
+        return MathUtil.toBigDecimal(map.get("amount"));
+    }
+
+    private BigDecimal memory(Map map) {
+        final Object oval = map.get("memory");
+        Long lval = oval instanceof Long ? (Long)oval : Long.parseLong(oval.toString());
+        return MathUtil.toBigDecimal(String.valueOf(lval / (double)1_000_000));
     }
 
     private Map fetchStats() {
-        return sendGetRequest(ResourcePaths.USAGE_SUMMARY_PATH, Map.class, Collections.emptyMap()).getBody();
+        return usageService.stats().getBody();
     }
 
     private void startTests(String id, List<Usage> resultBuffer) {

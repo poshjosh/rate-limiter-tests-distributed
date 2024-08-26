@@ -3,7 +3,7 @@ package io.github.poshjosh.ratelimiter.tests.client.tests.performance;
 import java.util.Arrays;
 
 public enum RateLimitMode {
-    Auto, Manual, Off;
+    Auto, Manual, Off, Remote;
 
     public static RateLimitMode of(String sval) {
         RateLimitMode[] values = RateLimitMode.values();

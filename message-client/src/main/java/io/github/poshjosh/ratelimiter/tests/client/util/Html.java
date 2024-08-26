@@ -1,5 +1,7 @@
 package io.github.poshjosh.ratelimiter.tests.client.util;
 
+import io.github.poshjosh.ratelimiter.tests.client.resources.ResourcePaths;
+
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
@@ -32,7 +34,11 @@ public final class Html {
         if (data == null) {
             return appendTo.append("<tr>").append(TD).append("null").append(_END);
         } else if (data.isEmpty()) {
-            return appendTo.append("<tr>").append(TD).append("No data").append(_END);
+            return appendTo.append("<tr>").append(TD).append("No data. ")
+                    .append("<a href=\"")
+                    .append(ResourcePaths.USAGE_SUMMARY_PATH)
+                    .append("\">Request usage again</a>")
+                    .append(_END);
         } else{
             data.forEach((k, v) -> {
                 appendTo.append("<tr>").append(TD).append(k).append("</td>").append(TD).append(v).append(_END);
@@ -82,9 +88,9 @@ public final class Html {
         StringBuilder html = new StringBuilder(title.length() + body.length() + 120);
         html.append("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\">");
         tag("title", title, html);
-        html.append("</head");
+        html.append("</head>");
         tag("body", body, html);
-        html.append("</html");
+        html.append("</html>");
         return html.toString();
     }
 }

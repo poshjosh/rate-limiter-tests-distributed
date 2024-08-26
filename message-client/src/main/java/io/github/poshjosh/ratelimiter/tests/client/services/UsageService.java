@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -23,9 +24,25 @@ public class UsageService {
         this.rest = rest;
     }
 
+    public ResponseEntity<Object> clearUsageRecord() {
+        log.debug("#clearUsageRecord()");
+        Function<RestClientException, Object> onError = e -> e;
+        return rest.delete(ResourcePaths.USAGE_PATH, onError);
+    }
+
+    public ResponseEntity<List> usage() {
+        log.debug("#usage()");
+        Function<RestClientException, List> onError = Collections::singletonList;
+        return rest.get(ResourcePaths.USAGE_PATH, List.class, onError, Collections.emptyList());
+    }
+
     public ResponseEntity<Map> stats() {
         log.debug("#stats()");
         Function<RestClientException, Map> onError = e -> Collections.singletonMap("error", e.toString());
-        return rest.get(ResourcePaths.USAGE_SUMMARY_PATH, Map.class, onError);
+        return rest.get(ResourcePaths.USAGE_SUMMARY_PATH, Map.class, onError, Collections.emptyMap());
+    }
+
+    public Rest getRest() {
+        return rest;
     }
 }

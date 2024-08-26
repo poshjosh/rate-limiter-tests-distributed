@@ -16,8 +16,14 @@ server:
   port: 5555
 
 app:
-  rate-limit-mode: auto
   output-dir: /.rate-limiter/output
+  rate-limit-mode: auto
+  rate-limiter:
+    service:
+      url: http://172.20.202.141:8080 # http://192.168.2.30:8080
+      # When acquiring permits, we don't want to block the actual request,
+      # so we stop the process after some timeout, and proceed with the request.
+      timeout-millis: 500
 
 debug: false
 
@@ -26,6 +32,9 @@ logging:
     ROOT: info
     web: info
     io.github.poshjosh: info
+#    io.github.poshjosh.ratelimiter.matcher.MatchVisitors: trace
+#    io.github.poshjosh.ratelimiter.matcher.MatchContexts: trace
+#    io.github.poshjosh.ratelimiter.matcher.DefaultMatchContext: trace
     org.springframework: info
 #    org.springframework.cache: info
 #    org.springframework.data.redis: info

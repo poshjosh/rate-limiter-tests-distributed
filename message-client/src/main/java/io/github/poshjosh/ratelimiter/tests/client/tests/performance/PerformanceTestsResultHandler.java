@@ -65,8 +65,15 @@ public class PerformanceTestsResultHandler {
     }
 
     private Optional<Path> saveUsagePerSecond(List<Usage> usageList) {
-        List<Usage> computed = rateComputer.computeUsagePerSecond(usageList);
-        return saveTo(computed, filename + "-usage-per-sec.csv");
+        try {
+            List<Usage> computed = rateComputer.computeUsagePerSecond(usageList);
+            return saveTo(computed, filename + "-usage-per-sec.csv");
+        } catch (RuntimeException e) {
+            // TODO - Fix this, and remove this try/catch block.
+            //  See RateComputer and RateComputerTest
+            log.warn("Failed to compute usage per second for: " + usageList, e);
+            return Optional.empty();
+        }
     }
 
     private Optional<Path> saveDeviatedFromMin(List<Usage> usageList) {
@@ -80,38 +87,34 @@ public class PerformanceTestsResultHandler {
     }
 
     private String createSummaryHtml(Map statsBefore, List<Usage> usageList, Map statsAfter) {
-        final Html html = Html.of("Summary")
-                .p("Total results: " + usageList.size());
-        appendMemoryStats(usageList, html);
-        appendTimeStats(usageList, html);
+        final Html html = Html.of("Summary").p("Total results: " + usageList.size());
+
+        appendStats("Memory (MB) used per request", usageList, html, Usage::getMemory);
+        appendStats("Number of requests per second", usageList, html, Usage::getTime);
 
         html.append("<h3>Stats</h3>")
-                .tag("b", "Before running performance tests").table(statsBefore)
-                .append("<br/>").tag("b", "After running performance tests").table(statsAfter);
+                .tag("b", "Before running performance tests")
+                .table(statsBefore)
+                .append("<br/>")
+                .tag("b", "After running performance tests")
+                .table(statsAfter);
 
         return html.toString();
     }
 
-    private void appendMemoryStats(List<Usage> usageList, Html html) {
+    private void appendStats(
+            String what, List<Usage> usageList, Html html, Function<Usage, BigDecimal> converter) {
         if (usageList.isEmpty()) {
-            html.p("Memory difference: none")
-                    .p("Average memory: none");
+            html.p("No stats for: " + what.toLowerCase());
             return;
         }
-        BigDecimal min = findMinAndMax(usageList, Usage::getMemory)[0];
-        BigDecimal max = findMinAndMax(usageList, Usage::getMemory)[1];
-        BigDecimal diff = MathUtil.subtract(max, min);
-        BigDecimal memorySum = sum(usageList).getMemory();
-        BigDecimal averageMemory = MathUtil.divide(memorySum, BigDecimal.valueOf(usageList.size()));
-        html.p("Memory difference: " + diff + "MB")
-                .p("Average memory: " + averageMemory + "MB");
-    }
-
-    private void appendTimeStats(List<Usage> usageList, Html html) {
-        BigDecimal min = findMinAndMax(usageList, Usage::getTime)[0];
-        BigDecimal max = findMinAndMax(usageList, Usage::getTime)[1];
-        BigDecimal diff = MathUtil.subtract(max, min);
-        html.p("Time spent: " + diff + " seconds");
+        BigDecimal [] minMax = findMinAndMax(usageList, converter);
+        BigDecimal sum = converter.apply(sum(usageList));
+        BigDecimal ave = MathUtil.divide(sum, BigDecimal.valueOf(usageList.size()));
+        html.p(what)
+                .p("* Minimum: " + minMax[0])
+                .p("* Maximum: " + minMax[1])
+                .p("* Average: " + ave);
     }
 
     private String toString(List<Usage> usageList, String lineSeparator) {
@@ -136,9 +139,15 @@ public class PerformanceTestsResultHandler {
     }
 
     private BigDecimal [] findMinAndMax(List<Usage> candidates, Function<Usage, BigDecimal> converter) {
-        BigDecimal [] result = new BigDecimal[]{MathUtil.ZERO, MathUtil.ZERO};
-        for (Usage usage : candidates) {
+        BigDecimal [] result = new BigDecimal[2];
+        for (int i = 0; i < candidates.size(); i++) {
+            final Usage usage = candidates.get(i);
             final BigDecimal value = converter.apply(usage);
+            if (i == 0) {
+                result[0] = value;
+                result[1] = value;
+                continue;
+            }
             if (value.compareTo(result[0]) < 0) {
                 result[0] = value;
             }

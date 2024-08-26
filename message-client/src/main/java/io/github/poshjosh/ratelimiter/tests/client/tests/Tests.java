@@ -3,6 +3,7 @@ package io.github.poshjosh.ratelimiter.tests.client.tests;
 import io.github.poshjosh.ratelimiter.tests.client.Rest;
 import io.github.poshjosh.ratelimiter.tests.client.exception.TestException;
 import io.github.poshjosh.ratelimiter.tests.client.resources.ResourcePaths;
+import io.github.poshjosh.ratelimiter.tests.client.tests.performance.RateLimitMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -21,9 +22,11 @@ public class Tests extends AbstractTests {
     private static final int TOO_MANY = 429;
 
     private final Rest serverRestService;
-    public Tests(Rest serverRestService) {
+    private final RateLimitMode rateLimitMode;
+    public Tests(Rest serverRestService, RateLimitMode rateLimitMode) {
         super(serverRestService.withPath(ResourcePaths.MESSAGE_PATH));
         this.serverRestService = serverRestService;
+        this.rateLimitMode = rateLimitMode;
     }
 
     protected String doRun() {
@@ -34,12 +37,7 @@ public class Tests extends AbstractTests {
         // See the associated rest endpoint having the rate limit and condition
         for (int i = 0; i < 5; i++) {
             shouldReturnStatus(givenAllEntitiesAreGotten(noCookies), OK);
-
-            ResponseEntity<Object> response = getLastPutToCache();
-            Object lastPutToCache = response == null ? null : response.getBody();
-            if (lastPutToCache == null || lastPutToCache instanceof Throwable) {
-                throw TestException.cacheProblem();
-            }
+            this.checkThatCacheIsWorking();
         }
 
         ResponseEntity<List> responseList = givenAllEntitiesAreGotten(noCookies);
@@ -82,6 +80,17 @@ public class Tests extends AbstractTests {
         shouldReturnStatus(givenAllEntitiesAreGotten(noCookies, headers), TOO_MANY); // 2 of 1
 
         return "";
+    }
+
+    protected void checkThatCacheIsWorking() {
+        if (rateLimitMode == RateLimitMode.Remote) {
+            return;
+        }
+        ResponseEntity<Object> response = getLastPutToCache();
+        Object lastPutToCache = response == null ? null : response.getBody();
+        if (lastPutToCache == null || lastPutToCache instanceof Throwable) {
+            throw TestException.cacheProblem();
+        }
     }
 
     protected ResponseEntity<Object> getLastPutToCache() {
