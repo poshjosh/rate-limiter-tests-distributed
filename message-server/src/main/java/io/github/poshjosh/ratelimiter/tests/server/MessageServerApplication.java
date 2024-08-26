@@ -3,7 +3,6 @@ package io.github.poshjosh.ratelimiter.tests.server;
 import io.github.poshjosh.ratelimiter.RateLimiter;
 import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
 import io.github.poshjosh.ratelimiter.tests.server.model.RateLimitMode;
-import io.github.poshjosh.ratelimiter.tests.server.redis.RedisCache;
 import io.github.poshjosh.ratelimiter.tests.server.services.MessageService;
 import io.github.poshjosh.ratelimiter.tests.server.util.logging.LogMessages;
 import io.github.poshjosh.ratelimiter.tests.server.util.logging.LogMessageCollector;
@@ -15,7 +14,6 @@ import io.github.poshjosh.ratelimiter.web.spring.RateLimitPropertiesSpring;
 import io.github.poshjosh.ratelimiter.web.spring.RateLimitingFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -59,22 +57,19 @@ public class MessageServerApplication {
 
     @Component
     public static class RateLimitingFilterImpl extends RateLimitingFilter {
-        private static final String KEY_REQUESTS = "RateLimitingFilter:requests";
-        private static final String KEY_CONSUMPTION = "RateLimitingFilter:consumption";
-        private static final String KEY_REJECTION = "RateLimitingFilter:rejection";
         private final BandwidthsStore<String> store;
         private final ManualRateLimiter manualRateLimiter;
         private final RateLimitMode rateLimitMode;
-        private final RedisCache<Long> redisLongCache;
+        private final RequestCounter requestCounter;
         public RateLimitingFilterImpl(
                 RateLimitProperties properties, BandwidthsStore<String> store,
                 ManualRateLimiter manualRateLimiter, @Value("${app.rate-limit-mode}") String rateLimitModeString,
-                @Qualifier("redisLongCache") RedisCache<Long> redisLongCache) {
+                RequestCounter requestCounter) {
             super(properties);
             this.store = Objects.requireNonNull(store);
             this.manualRateLimiter = Objects.requireNonNull(manualRateLimiter);
             this.rateLimitMode = RateLimitMode.of(rateLimitModeString);
-            this.redisLongCache = Objects.requireNonNull(redisLongCache);
+            this.requestCounter = Objects.requireNonNull(requestCounter);
         }
 
         @Override protected void initFilterBean() throws ServletException {
@@ -96,7 +91,7 @@ public class MessageServerApplication {
 
         @Override public void doFilter(ServletRequest request, ServletResponse response,
                 FilterChain chain) throws IOException, ServletException {
-            redisLongCache.increment(KEY_REQUESTS);
+            requestCounter.incrementRequests();
             switch(rateLimitMode) {
                 case Auto: super.doFilter(request, response, chain); break; // Apply rate limiting
                 case Manual:
@@ -114,7 +109,6 @@ public class MessageServerApplication {
                 throws IOException, ServletException {
             final boolean success = manualRateLimiter.tryConsume(request);
             RequestData requestData = new RequestData(request);
-            this.onConsumed(requestData, manualRateLimiter);
             if (!success) {
                 this.onRejected(requestData, manualRateLimiter);
                 this.onLimitExceeded(request, response, chain);
@@ -127,7 +121,6 @@ public class MessageServerApplication {
             final RateLimiter rateLimiter = getRateLimiter(request);
             final boolean success = rateLimiter.tryAcquire(getTimeout(request), TimeUnit.SECONDS);
             final RequestData requestData = new RequestData(request);
-            onConsumed(requestData, rateLimiter);
             if (!success) {
                 onRejected(requestData, rateLimiter);
             }
@@ -144,21 +137,9 @@ public class MessageServerApplication {
             //log.debug("Too many requests"); Already logged below
             res.sendError(429, LogMessages.getAndClear().toString());
         }
-        void onConsumed(RequestData requestData, Object rateLimiter) {
-            redisLongCache.increment(KEY_CONSUMPTION);
-            log.trace("Consumed {}, by rate limiter: {}", requestData, rateLimiter);
-        }
         void onRejected(RequestData requestData, Object rateLimiter) {
-            redisLongCache.increment(KEY_REJECTION);
+            requestCounter.incrementRejections();
             log.debug("Rejected {}, by rate limiter: {}", requestData, rateLimiter);
         }
-        public long getRequests() { return redisLongCache.increment(KEY_REQUESTS) - 1; }
-        public long getConsumption() {
-            return redisLongCache.increment(KEY_CONSUMPTION) - 1;
-        }
-        public long getRejection() {
-            return redisLongCache.increment(KEY_REJECTION) - 1;
-        }
     }
-
 }

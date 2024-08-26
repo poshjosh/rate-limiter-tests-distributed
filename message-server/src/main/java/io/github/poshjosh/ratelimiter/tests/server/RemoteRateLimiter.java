@@ -14,17 +14,20 @@ import java.util.concurrent.TimeUnit;
 
 @Component
 public class RemoteRateLimiter {
+    private final boolean enabled;
     private final RateLimiterServiceClient postClient;
     private final RateLimiterServiceClient fastClient;
-    private final boolean enabled;
+    private final RequestCounter requestCounter;
 
     public RemoteRateLimiter(
             @Value("${app.rate-limit-mode}") String rateLimitModeString,
             @Value("${app.rate-limiter.service.url}") String rateLimiterServiceUrl,
-            @Value("${app.rate-limiter.service.timeout-millis}") long timeoutMillis) {
+            @Value("${app.rate-limiter.service.timeout-millis}") long timeoutMillis,
+            RequestCounter requestCounter) {
         this.postClient = new RateLimiterServiceClient(rateLimiterServiceUrl);
         this.fastClient = postClient.withTimeout(timeoutMillis, TimeUnit.MILLISECONDS);
         this.enabled = RateLimitMode.Remote == RateLimitMode.of(rateLimitModeString);
+        this.requestCounter = requestCounter;
     }
 
     public void addRate(String id, String rate, String condition) {
@@ -39,6 +42,7 @@ public class RemoteRateLimiter {
     public void checkLimit(String id, HttpServletRequest request) {
         if (!enabled) { return; }
         if (!fastClient.tryToAcquirePermitQuietly(id, request)) {
+            requestCounter.incrementRejections();
             throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS);
         }
     }
