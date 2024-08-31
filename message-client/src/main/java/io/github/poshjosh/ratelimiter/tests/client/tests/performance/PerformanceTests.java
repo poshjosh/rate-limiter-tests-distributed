@@ -89,6 +89,7 @@ public class PerformanceTests extends AbstractTests implements TestProcess {
 
         List<?> usageRateResponse = usageService.usage().getBody();
         List<Usage> usageRate = usageRateResponse.stream()
+                .filter(Map.class::isInstance)
                 .map(oval -> (Map)oval)
                 .map(map -> new Usage(amount(map), memory(map)))
                 .collect(Collectors.toList());
