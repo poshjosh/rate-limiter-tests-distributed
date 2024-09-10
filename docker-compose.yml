@@ -11,7 +11,7 @@ services:
     restart: unless-stopped
     # --save 20 1 instructs the redis server to save the dataset to disk every 20 seconds,
     # if there are one or more writes
-    command: redis-server --save 20 1 --loglevel debug
+    command: redis-server --port ${SPRING_REDIS_PORT:-6379} --save 20 1 --loglevel debug
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - redis-cache:/data
