@@ -1,7 +1,10 @@
-#!/bin/bash
-################ README ################
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+#################################### README #####################################
 # - This script may be run with environment variable `APP_RATE_LIMIT_MODE` having
-# either of the following values: [auto|manual|off].
+# either of the following values: [auto|manual|off|remote].
 
 # - Run this script with each of the above values and compare the results.
 #   - For example, first run in `auto` mode, select different setups until a
@@ -9,11 +12,7 @@
 # - After running this script, run the related tests in your browser by opening
 # http://localhost:3333/ (use whatever port you set for the message-client in the
 # docker-compose.yml file).
-########################################
-
-MVN_SETTINGS_FILE="$HOME/dev_looseboxes/.m2/settings.xml"
-
-mvn clean package -s "$MVN_SETTINGS_FILE"
+#################################################################################
 
 docker-compose down
 
@@ -25,4 +24,3 @@ docker-compose up -d --build --scale message-server=3 --scale message-client=1 -
 
 docker exec rate-limiter-tests-distributed-redis-cache-1 sh \
     -c 'redis-cli FLUSHALL && echo "SUCCESSFULLY FLUSHED CACHE" || echo "FAILED TO FLUSH CACHE"'
-

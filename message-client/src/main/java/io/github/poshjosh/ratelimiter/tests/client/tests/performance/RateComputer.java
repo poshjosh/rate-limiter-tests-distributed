@@ -162,6 +162,9 @@ public class RateComputer {
     }
 
     private BigDecimal invert(int value) {
+        if (value == 0) {
+            return MathUtil.ZERO;
+        }
         if (value == 1) {
             return MathUtil.ONE;
         }

@@ -17,7 +17,9 @@ There are multiple services:
 
 ### How
 
-To build and start, run the script `build-and-run.sh`
+To build, run the script `shell/build.sh`.
+
+To run the application, run the script `shell/run.docker.sh`.
 
 Some endpoints in `message-server` are rate limited. These endpoints are called by 
 `message-client` during the tests. To run the tests open the `message-client` home
