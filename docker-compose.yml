@@ -27,6 +27,9 @@ services:
       - "5555-5560:5555"
     networks:
       - message-network
+    extra_hosts:
+      # Connect from within a docker container to the host machine
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
     depends_on:
       - redis-cache
@@ -40,7 +43,7 @@ services:
       SPRING_REDIS_PORT: "${SPRING_REDIS_PORT:-6379}"
       SPRING_REDIS_DATABASE: "${SPRING_REDIS_DATABASE:-0}"
       SPRING_REDIS_TIMEOUT: "${SPRING_REDIS_TIMEOUT:-60000}"
-      SPRING_CACHE_TYPE: "${SPRING_CACHE_TYPE:-redis}"
+      SPRING_CACHE_TYPE: "redis"
       SPRING_CACHE_REDIS_CACHE_NULL_VALUES: "${SPRING_CACHE_REDIS_CACHE_NULL_VALUES:-false}"
       APP_RATE_LIMIT_MODE: "${APP_RATE_LIMIT_MODE:-auto}"
       APP_OUTPUT_DIR: "${APP_OUTPUT_DIR:-/output/1}"

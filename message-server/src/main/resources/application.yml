@@ -20,7 +20,7 @@ app:
   rate-limit-mode: auto
   rate-limiter:
     service:
-      url: http://192.168.48.3:8080 # http://172.31.0.3:8080
+      url: "${APP_RATE_LIMITER_SERVICE_URL}"
       # When acquiring permits, we don't want to block the actual request,
       # so we stop the process after some timeout, and proceed with the request.
       timeout-millis: 500

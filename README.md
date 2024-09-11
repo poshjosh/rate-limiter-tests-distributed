@@ -23,5 +23,9 @@ Some endpoints in `message-server` are rate limited. These endpoints are called 
 `message-client` during the tests. To run the tests open the `message-client` home
 and click the link provided. A detailed log is returned after the tests are run.
 
-To shutdown all, run `docker-compose down`
+To shut down all, run `docker-compose down`
+
+### Supported environment variables
+
+See [Supported environment variables](docs/env.md)
 

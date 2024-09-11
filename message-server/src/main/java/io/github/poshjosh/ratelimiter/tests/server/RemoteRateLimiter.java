@@ -3,6 +3,8 @@ package io.github.poshjosh.ratelimiter.tests.server;
 import io.github.poshjosh.ratelimiter.client.RateLimiterServiceClient;
 import io.github.poshjosh.ratelimiter.client.ServerException;
 import io.github.poshjosh.ratelimiter.tests.server.model.RateLimitMode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -14,6 +16,8 @@ import java.util.concurrent.TimeUnit;
 
 @Component
 public class RemoteRateLimiter {
+    private static final Logger log = LoggerFactory.getLogger(RemoteRateLimiter.class);
+
     private final boolean enabled;
     private final RateLimiterServiceClient postClient;
     private final RateLimiterServiceClient fastClient;
@@ -24,6 +28,7 @@ public class RemoteRateLimiter {
             @Value("${app.rate-limiter.service.url}") String rateLimiterServiceUrl,
             @Value("${app.rate-limiter.service.timeout-millis}") long timeoutMillis,
             RequestCounter requestCounter) {
+        log.info("Will connect to remote rate limiter service: {}", rateLimiterServiceUrl);
         this.postClient = new RateLimiterServiceClient(rateLimiterServiceUrl);
         this.fastClient = postClient.withTimeout(timeoutMillis, TimeUnit.MILLISECONDS);
         this.enabled = RateLimitMode.Remote == RateLimitMode.of(rateLimitModeString);
