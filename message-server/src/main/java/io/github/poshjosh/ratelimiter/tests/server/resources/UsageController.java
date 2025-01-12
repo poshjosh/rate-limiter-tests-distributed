@@ -36,10 +36,6 @@ public class UsageController{
     public UsageController(UsageService usageService, RemoteRateLimiter remoteRateLimiter) {
         this.usageService = usageService;
         this.remoteRateLimiter = remoteRateLimiter;
-        int [] permits = {500, 100, 50, 25, 15, 10};
-        for (int permit : permits) {
-            remoteRateLimiter.addRate("usages." + permit, permit+"/s", null);
-        }
     }
 
     @DeleteMapping(path)
@@ -59,7 +55,7 @@ public class UsageController{
     @Rate(permits = 500, condition = condition)
     public ResponseEntity<BigDecimal> limitedUsage500(
             HttpServletRequest request, @RequestParam(required = false, defaultValue = "0") int work) {
-        remoteRateLimiter.checkLimit("usages.500", request);
+        remoteRateLimiter.checkLimit(request, "usages.500", "500/s");
 
         log.debug("#limitedUsage500({})", work);
         return ResponseEntity.ok(usageService.work(work));
@@ -69,7 +65,7 @@ public class UsageController{
     @Rate(permits = 100, condition = condition)
     public ResponseEntity<BigDecimal> limitedUsage100(
             HttpServletRequest request, @RequestParam(required = false, defaultValue = "0") int work) {
-        remoteRateLimiter.checkLimit("usages.100", request);
+        remoteRateLimiter.checkLimit(request, "usages.100", "100/s");
 
         log.debug("#limitedUsage100({})", work);
         return ResponseEntity.ok(usageService.work(work));
@@ -80,7 +76,7 @@ public class UsageController{
     public ResponseEntity<BigDecimal> limitedUsage50(
             HttpServletRequest request, @RequestParam(required = false, defaultValue = "0") int work) {
         log.debug("#limitedUsage50({})", work);
-        remoteRateLimiter.checkLimit("usages.50", request);
+        remoteRateLimiter.checkLimit(request, "usages.50", "50/s");
 
         return ResponseEntity.ok(usageService.work(work));
     }
@@ -89,7 +85,7 @@ public class UsageController{
     @Rate(permits = 25, condition = condition)
     public ResponseEntity<BigDecimal> limitedUsage25(
             HttpServletRequest request, @RequestParam(required = false, defaultValue = "0") int work) {
-        remoteRateLimiter.checkLimit("usages.25", request);
+        remoteRateLimiter.checkLimit(request, "usages.25", "25/s");
 
         log.debug("#limitedUsage25({})", work);
         return ResponseEntity.ok(usageService.work(work));
@@ -99,7 +95,7 @@ public class UsageController{
     @Rate(permits = 15, condition = condition)
     public ResponseEntity<BigDecimal> limitedUsage15(
             HttpServletRequest request, @RequestParam(required = false, defaultValue = "0") int work) {
-        remoteRateLimiter.checkLimit("usages.15", request);
+        remoteRateLimiter.checkLimit(request, "usages.15", "15/s");
 
         log.debug("#limitedUsage10({})", work);
         return ResponseEntity.ok(usageService.work(work));
@@ -109,7 +105,7 @@ public class UsageController{
     @Rate(permits = 10, condition = condition)
     public ResponseEntity<BigDecimal> limitedUsage10(
             HttpServletRequest request, @RequestParam(required = false, defaultValue = "0") int work) {
-        remoteRateLimiter.checkLimit("usages.10", request);
+        remoteRateLimiter.checkLimit(request, "usages.10", "10/s");
 
         log.debug("#limitedUsage10({})", work);
         return ResponseEntity.ok(usageService.work(work));
@@ -118,7 +114,7 @@ public class UsageController{
     @GetMapping(limited_path + "/0")
     public ResponseEntity<BigDecimal> limitedUsage0(
             HttpServletRequest request, @RequestParam(required = false, defaultValue = "0") int work) {
-        remoteRateLimiter.checkLimit("usages.10", request);
+        remoteRateLimiter.checkLimit(request, "usages.0", "0/s");
 
         log.debug("#limitedUsage0({})", work);
         return ResponseEntity.ok(usageService.work(work));

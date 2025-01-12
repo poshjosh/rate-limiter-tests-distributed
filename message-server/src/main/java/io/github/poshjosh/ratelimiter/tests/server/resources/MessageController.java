@@ -29,17 +29,12 @@ public class MessageController {
     public MessageController(MessageService messageService, RemoteRateLimiter remoteRateLimiter) {
         this.messageService = messageService;
         this.remoteRateLimiter = remoteRateLimiter;
-        remoteRateLimiter.addRate("messages.post", "1/m", "web.session.id !=");
-        remoteRateLimiter.addRate("messages.count", "5/m", null);
-        remoteRateLimiter.addRate("messages.get-one", "1/m", "web.session.id !=");
-        remoteRateLimiter.addRate("messages.get-all", "1/m", "web.request.header[X-SAMPLE-TRIGGER] = true");
-        remoteRateLimiter.addRate("messages.delete", "2/m", null);
     }
 
     @PostMapping(path)
     @Rate(permits=1, timeUnit=TimeUnit.MINUTES, when="web.session.id !=")
     public ResponseEntity<List<Message>> postMessage(HttpServletRequest request, @RequestBody Message message) {
-        remoteRateLimiter.checkLimit("messages.post", request);
+        remoteRateLimiter.checkLimit(request, "messages.post", "1/m", "web.session.id !=");
 
         log.debug("#postMessage({})", message);
         message = messageService.addMessage(message);
@@ -50,7 +45,7 @@ public class MessageController {
     @GetMapping(path + "/count")
     @Rate(permits=5, timeUnit=TimeUnit.MINUTES)
     public ResponseEntity<Integer> countMessages(HttpServletRequest request) {
-        remoteRateLimiter.checkLimit("messages.count", request);
+        remoteRateLimiter.checkLimit(request, "messages.count", "5/m", null);
 
         log.debug("#countMessages()");
         return ResponseEntity.ok(messageService.countMessages());
@@ -59,7 +54,7 @@ public class MessageController {
     @GetMapping(path + "/{id}")
     @Rate(permits=1, timeUnit=TimeUnit.MINUTES, when="web.session.id !=")
     public ResponseEntity<Message> getMessage(HttpServletRequest request, @PathVariable("id") Long id) {
-        remoteRateLimiter.checkLimit("messages.get-one", request);
+        remoteRateLimiter.checkLimit(request, "messages.get-one", "1/m", "web.session.id !=");
 
         log.debug("#getMessage({})", id);
         return messageService.getMessage(id)
@@ -70,7 +65,7 @@ public class MessageController {
     @GetMapping(path)
     @Rate(permits=1, timeUnit=TimeUnit.MINUTES, when="web.request.header[X-SAMPLE-TRIGGER] = true")
     public List<Message> getMessages(HttpServletRequest request) {
-        remoteRateLimiter.checkLimit("messages.get-all", request);
+        remoteRateLimiter.checkLimit(request, "messages.get-all", "1/m", "web.request.header[X-SAMPLE-TRIGGER] = true");
 
         log.debug("#getMessages()");
         List<Message> messages = new ArrayList<>();
@@ -82,7 +77,7 @@ public class MessageController {
     @DeleteMapping(path + "/{id}")
     @Rate(permits = 2, timeUnit = TimeUnit.MINUTES)
     public boolean deleteMessage(HttpServletRequest request, @PathVariable Long id) {
-        remoteRateLimiter.checkLimit("messages.delete", request);
+        remoteRateLimiter.checkLimit(request,"messages.delete", "2/m", null);
 
         log.debug("#deleteMessage({})", id);
         return messageService.removeMessage(id);
