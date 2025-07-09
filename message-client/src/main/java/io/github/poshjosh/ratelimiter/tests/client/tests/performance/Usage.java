@@ -13,8 +13,8 @@ public final class Usage {
         this(new BigDecimal(time), new BigDecimal(memory));
     }
     public Usage(BigDecimal time, BigDecimal memory) {
-        this.time = Objects.requireNonNull(time);
-        this.memory = Objects.requireNonNull(memory);
+        this.time = time.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : time;
+        this.memory = memory.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : memory;
     }
     public Usage add(Usage other) {
         return new Usage(time.add(other.time), memory.add(other.memory));

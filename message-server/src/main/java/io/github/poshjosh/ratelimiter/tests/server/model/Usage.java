@@ -7,13 +7,19 @@ import java.util.Objects;
 
 public final class Usage implements Serializable {
     public static Usage of(long duration, long memory) {
-        return new Usage(duration, memory);
+        return new Usage(Math.max(duration, 0), Math.max(memory, 0));
     }
 
     private final long amount;
     private final long memory;
 
     private Usage(long amount, long memory) {
+        if (amount < 0) {
+            throw new IllegalArgumentException("Amount cannot be negative: " + amount);
+        }
+        if (memory < 0) {
+            throw new IllegalArgumentException("Memory cannot be negative: " + memory);
+        }
         this.amount = amount;
         this.memory = memory;
     }
